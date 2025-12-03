@@ -10,8 +10,8 @@ set(EXTERNAL_LIBS
 set(glfw_URL "https://github.com/glfw/glfw.git")
 set(imgui_URL "https://github.com/ocornut/imgui.git")
 
-set(glfw_tag "master")
-set(imgui_tag "docking")
+set(glfw_tag "162896e5b9a40dc382c5c438cd12c90a5ff86ddd")
+set(imgui_tag "772cbfd0146350d05702b923354aa677c9c5a4ef")
 
 foreach(lib ${EXTERNAL_LIBS})
     # dynamically get URL variable

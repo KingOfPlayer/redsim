@@ -3,3 +3,5 @@ external/imgui
 
 build
 .vscode
+doc
+test
