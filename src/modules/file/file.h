@@ -13,4 +13,5 @@ struct FilePath{
 class FileModule{
 public:
     static FilePath SelectFile();
+    static FilePath SaveFile();
 };
