@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_CXX_COMPILER gcc)
 set(CMAKE_CXX_STANDARD 11)
 
 project(redsim VERSION 0.0.0 LANGUAGES CXX)
@@ -9,7 +9,11 @@ add_subdirectory(external)
 #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glfw)
 #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/glad)
 
+cmake_policy(SET CMP0072 NEW)
+set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
+
+find_package(glm REQUIRED)
 
 #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/include/GLFW)
 
@@ -28,7 +32,7 @@ target_include_directories(redsim PRIVATE
     #${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
-target_link_libraries(redsim PRIVATE glfw glad imgui OpenGL::GL X11)
+target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui glm::glm X11)
 
 # Optionally include the GLFW headers (if needed explicitly)
 #target_include_directories(redsim PRIVATE external/glfw/include)

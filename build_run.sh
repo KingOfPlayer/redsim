@@ -3,6 +3,12 @@
 mkdir -p build
 cd build
 cmake ..
+
+if [ $? -ne 0 ]; then
+    echo "Configuration failed!"
+    exit 1
+fi
+
 cmake --build .
 
 if [ $? -ne 0 ]; then

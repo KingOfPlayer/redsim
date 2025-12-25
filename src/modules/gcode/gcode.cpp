@@ -156,11 +156,7 @@ void GCodeModule::ProcessGCommand(const GCodeProgramCommand &cmd)
                 break;
             case 'E':
                 newPoint.e = arg.value;
-
-                if(newPoint.e < arg.value)
-                {
-                    isExtrusionMove = true;
-                }
+                isExtrusionMove = true;
                 break;
             case 'F':
                 state.feedrate = arg.value;
