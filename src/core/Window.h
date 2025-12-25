@@ -7,6 +7,7 @@
 
 class Window{
 GLFWwindow* window;
+Project* project;
 RootUICtx* rootUICtx;
 RootUI* rootUI;
 public:
@@ -37,9 +38,15 @@ public:
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        printf("Window and OpenGL context initialized successfully.\n");
 
-        rootUICtx = new RootUICtx();
+        project = new Project();
+        printf("Project created successfully.\n");
+        rootUICtx = new RootUICtx(project);
+        printf("RootUICtx created successfully.\n");
         rootUI = new RootUI(window,rootUICtx);
+        printf("RootUI created successfully.\n");
     }
 
     void update(){

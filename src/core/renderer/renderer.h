@@ -5,7 +5,8 @@
 
 class Renderer {
 public:
-    glm::mat4 viewProj; // Combined View-Projection Matrix
+    glm::mat4 viewProj;
+    glm::vec3 globalScale = glm::vec3(0.1f, 0.1f, 0.1f);
     int Viewport_Width, Viewport_Height;
 
     GLuint FBO;
@@ -74,6 +75,7 @@ public:
 
         // Calculate MVP: Perspective * View * Model
         glm::mat4 model = obj.GetModelMatrix();
+        model = glm::scale(model, globalScale);
         glm::mat4 mvp = viewProj * model; 
 
         if(obj.drawMode == GL_LINES) {

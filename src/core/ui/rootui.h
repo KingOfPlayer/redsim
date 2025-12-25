@@ -25,9 +25,9 @@ public:
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init("#version 330");
 
-        GCodeTools* gcodeToolsUI = new GCodeTools(this);
+        GCodeTools* gcodeToolsUI = new GCodeTools(rootUICtx);
         addUI(gcodeToolsUI);
-        Viewport* viewportUI = new Viewport(this);
+        Viewport* viewportUI = new Viewport(rootUICtx);
         addUI(viewportUI);
     }
 
@@ -83,5 +83,9 @@ public:
             ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
+    }
+
+    RootUICtx* getCtx() {
+        return rootUICtx;
     }
 };

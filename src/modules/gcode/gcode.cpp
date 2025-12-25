@@ -10,6 +10,9 @@ void GCodeModule::OpenFile(FilePath *filepath)
         return;
     }
 
+    currentFile = new FilePath();
+    *currentFile = *filepath;
+    
     while (!feof(file))
     {
         long index = ftell(file);
@@ -148,11 +151,11 @@ void GCodeModule::ProcessGCommand(const GCodeProgramCommand &cmd)
                 break;
             case 'Y':
                 isMove = true;
-                newPoint.y = arg.value;
+                newPoint.z = arg.value;
                 break;
             case 'Z':
                 isMove = true;
-                newPoint.z = arg.value;
+                newPoint.y = -arg.value;
                 break;
             case 'E':
                 newPoint.e = arg.value;
@@ -216,10 +219,10 @@ void GCodeModule::ProcessGCommand(const GCodeProgramCommand &cmd)
                 state.globalPosition.x = arg.value;
                 break;
             case 'Y':
-                state.globalPosition.y = arg.value;
+                state.globalPosition.z = arg.value;
                 break;
             case 'Z':
-                state.globalPosition.z = arg.value;
+                state.globalPosition.y = arg.value;
                 break;
             case 'E':
                 state.globalPosition.e = arg.value;
@@ -294,4 +297,64 @@ void GCodeModule::SavePointsAndPathsToObj(const char *outputPath)
 
     fclose(file);
     printf("Saved points and paths to OBJ file: %s\n", outputPath);
+}
+
+Object GCodeModule::ConvertPathToRenderObject() {
+
+    glm::vec3 min(1e9), max(-1e9);
+    for (auto& p : points) {
+        if(p.x < min.x) min.x = p.x; if(p.x > max.x) max.x = p.x;
+        if(p.y < min.y) min.y = p.y; if(p.y > max.y) max.y = p.y;
+        if(p.z < min.z) min.z = p.z; if(p.z > max.z) max.z = p.z;
+    }
+
+    // 2. Calculate the Center
+    glm::vec3 center = (min + max) * 0.5f;
+
+    // 3. Create Vertices relative to that center
+
+    Object obj;
+    obj.drawMode = GL_LINES;
+    obj.useIndices = true;
+    obj.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Bright Red to see easily
+
+    std::vector<float> vertices;
+    for (const auto& p : points) {
+        vertices.push_back(p.x - center.x);
+        vertices.push_back(p.y - center.y);
+        vertices.push_back(p.z - center.z);
+    }
+
+    /*std::vector<float> vertices;
+    for (const auto& p : points) {
+        vertices.push_back(p.x);
+        vertices.push_back(p.y);
+        vertices.push_back(p.z);
+    }*/
+
+    std::vector<unsigned int> indices;
+    for (const auto& path : paths) {
+        // IMPORTANT: Subtract 1 because OBJ is 1-indexed, OpenGL is 0-indexed
+        indices.push_back((unsigned int)path.start - 1);
+        indices.push_back((unsigned int)path.end - 1);
+    }
+    obj.vertexCount = (uint32_t)indices.size();
+
+    glGenVertexArrays(1, &obj.VAO);
+    glBindVertexArray(obj.VAO);
+
+    GLuint vbo, ebo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    return obj;
 }

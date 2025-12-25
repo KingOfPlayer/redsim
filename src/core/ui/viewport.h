@@ -115,10 +115,10 @@ class Viewport : public UI {
     float yaw = -90.0f; 
     float pitch = -20.0f;
     float distance = 5.0f;
-    float sensitivity = 1.0f;
+    float sensitivity = 0.5f;
 
 public:
-    Viewport(RootUI* rootUI) : UI(rootUI) {
+    Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
         renderer = new Renderer(800, 600);
         plane = CreatePlane(1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
         grid = CreateGrid(10, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f));
@@ -126,7 +126,11 @@ public:
     }
 
     void render() override {
+        RootUICtx* ctx = GetRootUIContext();
+        Project* project = ctx->getProject();
+
         ImGui::Begin("Viewport");
+
         ImVec2 size = ImGui::GetContentRegionAvail();
         
         bool isHovered = ImGui::IsItemHovered(); 
@@ -144,7 +148,7 @@ public:
                 glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
                 glm::vec3 up = glm::normalize(glm::cross(right, forward));
 
-                float panSpeed = distance * sensitivity / 500.0f; 
+                float panSpeed = distance * sensitivity / 100.0f; 
                 glm::vec3 offset = (right * delta.x * panSpeed) + (up * -delta.y * panSpeed);
                 
                 cameraTarget += offset;
@@ -162,14 +166,11 @@ public:
                 if (pitch < -89.0f) pitch = -89.0f;
                 cameraUpdated = true;
             }
-        
-        }
-
-        // Zoom with Scroll
-        if (ImGui::IsWindowHovered()) {
-            distance -= ImGui::GetIO().MouseWheel * 0.5f;
-            if (distance < 1.0f) distance = 1.0f;
-            cameraUpdated = true;
+            if(ImGui::GetIO().MouseWheel != 0.0f) {
+                distance -= ImGui::GetIO().MouseWheel * 0.5f;
+                if (distance < 1.0f) distance = 1.0f;
+                cameraUpdated = true;
+            }
         }
 
         // Calculate New Camera Position based on Yaw/Pitch (Orbit Math)
@@ -184,13 +185,8 @@ public:
         glm::mat4 viewProj = proj * view;
         //Debugging: Print the view-projection matrix
         if (cameraUpdated) {
-            printf("View-Projection Matrix:\n");
-            for (int i = 0; i < 4; ++i) {
-                for (int j = 0; j < 4; ++j) {
-                    printf("% .2f ", viewProj[j][i]);
-                }
-                printf("\n");
-            }
+            printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
+            printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
         }
 
         renderer->SetViewProjection(viewProj);
@@ -205,8 +201,16 @@ public:
         renderer->DrawBegin();
         
         // Test Objects
-        renderer->DrawObject(plane, shaderProgram);
+        //renderer->DrawObject(plane, shaderProgram);
+
         renderer->DrawObject(grid, shaderProgram);
+
+        if(project != nullptr){
+            if(project->HasGCodeRenderObject() != false){
+                Object gcodeObj = project->GetGCodeRenderObject();
+                renderer->DrawObject(gcodeObj, shaderProgram);
+            }
+        }
 
         renderer->DrawEnd();
         ImGui::Image((void*)(intptr_t)renderer->FBOTexture, size,

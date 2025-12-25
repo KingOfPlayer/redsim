@@ -7,6 +7,8 @@
 class Object {
 public:
     GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
     uint32_t vertexCount;
     GLenum drawMode;
     bool useIndices = true;
@@ -29,5 +31,10 @@ public:
         model = glm::rotate(model, glm::radians(rotation.z), {0, 0, 1});
         model = glm::scale(model, scale);
         return model;
+    }
+
+    ~Object() {
+        // Cleanup VAO
+        //glDeleteVertexArrays(1, &VAO);
     }
 };

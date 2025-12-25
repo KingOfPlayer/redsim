@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "../file/file.h"
+#include "../../core/renderer/object.h"
 
 #define READER_BUFFER_SIZE 256
 #define PROGRAM_BUFFER_SIZE 128
@@ -107,12 +108,15 @@ public:
     std::vector<GCodePoint> points;
     std::vector<GcodePath> paths;
     GCodeMachineState state;
+    FilePath* currentFile;
 
     std::vector<GCodeProgramCommand> programCommands;
     void OpenFile(FilePath* filepath);
     GCodeProgramCommand ParseGCodeLine(char* line);
 
     void ExtractPointsAndPaths();
+    Object ConvertPathToRenderObject();
+
     void SavePointsAndPathsToObj(const char* outputPath);
 
 private:
