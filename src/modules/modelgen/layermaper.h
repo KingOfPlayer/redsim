@@ -60,18 +60,19 @@ class LayerMapper
 public:
     enum NozzleQuality
     {
-        LOW,
-        MEDIUM,
-        HIGH
+        LOW = 0,
+        MEDIUM = 1,
+        HIGH = 2
     }; 
 NozzleQuality nozzleQuality = MEDIUM;
+
 Nozzle2D nozzle;
 
     LayerMapper() {
-        nozzle = Generate2DNozzlePolygon(0.4f);
+        Set2DNozzlePolygon(0.46f);
     }
 
-    Nozzle2D Generate2DNozzlePolygon(float diameter)
+    void Set2DNozzlePolygon(float diameter)
     {
         int num_points = 8;
         switch (nozzleQuality)
@@ -99,8 +100,7 @@ Nozzle2D nozzle;
         Nozzle2D nozzle;
         nozzle.polygon = polygon;
         nozzle.diameter = diameter;
-        return nozzle;
-    }
+        this->nozzle = nozzle;}
 
     Polygon_2 place_nozzle_at(Polygon_2 nozzle, Point_2 vertex) {
         Polygon_2 translated_nozzle;
@@ -112,14 +112,6 @@ Nozzle2D nozzle;
 
 
         if (translated_nozzle.is_clockwise_oriented()) translated_nozzle.reverse_orientation();
-        
-        /*
-            printf("Placed nozzle at (%.2f, %.2f) with %lu points.\n", CGAL::to_double(vertex.x()), CGAL::to_double(vertex.y()), translated_nozzle.size());
-            printf("Nozzle points:\n");
-            for (const auto &pt : translated_nozzle.vertices()) {
-                printf("  (%.2f, %.2f)\n", CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
-            } 
-        */
 
         return translated_nozzle;
     }
@@ -127,11 +119,11 @@ Nozzle2D nozzle;
     std::list<Polygon_with_holes_2> GenerateLayerFromPaths(std::vector<GCodePoint> points, std::vector<GCodePath> paths)
     {
         double thickness = nozzle.diameter; // Example thickness for the extrusion
-        Polygon_set_2 merger;
         double half_w = thickness / 2.0;
 
         std::unordered_set<std::string> unique_points;
-
+        std::vector<Polygon_2> polygons;
+        int pi = 0;
         for (const auto &path : paths) {
             GCodePoint p1 = points[path.start];
             GCodePoint p2 = points[path.end];
@@ -160,23 +152,44 @@ Nozzle2D nozzle;
             // Ensure the polygon is oriented counter-clockwise for the Polygon_set_2
             if (rect.is_clockwise_oriented()) rect.reverse_orientation();
             
-            merger.join(rect);
+            polygons.push_back(rect);
+            pi++;
 
             if(unique_points.find(std::to_string(p1.x) + "," + std::to_string(p1.z)) == unique_points.end()) {
                 Polygon_2 nozzle_start = place_nozzle_at(nozzle.polygon, Point_2(p1.x, p1.z));
-                merger.join(nozzle_start);
+                polygons.push_back(nozzle_start);
+                pi++;
                 unique_points.insert(std::to_string(p1.x) + "," + std::to_string(p1.z));
             }
             if(unique_points.find(std::to_string(p2.x) + "," + std::to_string(p2.z)) == unique_points.end()) {
                 Polygon_2 nozzle_end =  place_nozzle_at(nozzle.polygon, Point_2(p2.x, p2.z));
-                merger.join(nozzle_end);
+                polygons.push_back(nozzle_end);
+                pi++;
                 unique_points.insert(std::to_string(p2.x) + "," + std::to_string(p2.z));
             }
 
         }
 
+        // pi times need be added to polygons
+        printf("Generated %d polygons from paths and nozzles.\n", pi);
+        printf("Total polygons count: %lu\n", polygons.size());
+
+        // 3. Merge all polygons into a single Polygon_set_2
+        /*Polygon_with_holes_2 unionR;
+        for (const auto &poly : polygons) {
+            if (unionR.is_unbounded()) {
+               unionR = Polygon_with_holes_2(poly);
+            } else {
+               CGAL::join (unionR, poly, unionR);
+            }
+        }*/
+
+        Polygon_set_2 merger;
+        merger.join(polygons.begin(), polygons.end());
+
         // 4. Extract result
         std::list<Polygon_with_holes_2> final_output;
+        //final_output.push_back(unionR);
         merger.polygons_with_holes(std::back_inserter(final_output));
         
         // print details of merger
@@ -358,7 +371,7 @@ Nozzle2D nozzle;
         // Test first layer only
         int i = 0;
         for (const auto &layer : layers) {
-            if (i++ == 5) break;
+            if (i++ == 1) break;
             std::list<Polygon_with_holes_2> layer_polygons = GenerateLayerFromPaths(layer.points, layer.paths);
             Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight); // Example layer height
             //layer_mesh = RemeshModel(layer_mesh, 0.5f); // Example target edge length

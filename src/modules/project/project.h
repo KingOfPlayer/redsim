@@ -70,4 +70,8 @@ public:
     Object GetMeshRenderObject(){
         return MeshRenderObject;
     }
+
+    LayerMapper& GetLayerMapper(){
+        return layerMapper;
+    }
 };

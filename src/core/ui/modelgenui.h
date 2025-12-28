@@ -7,6 +7,8 @@
 
 
 class ModelGenUI: public UI{
+    float nozzleDiameter = 0.46f;
+    int qualityIndex = 0;
     void render() override {
         ImGui::Begin("Model Generation Tools");
 
@@ -16,11 +18,37 @@ class ModelGenUI: public UI{
         if(project->isProjectLoaded()){
             if(ImGui::Button("Generate 3D Model from Layers")){
                 printf("Generating 3D Model from Layers...\n");
+                project->GetLayerMapper().Set2DNozzlePolygon(nozzleDiameter);
+                switch (qualityIndex)
+                {
+                case 0:
+                    project->GetLayerMapper().nozzleQuality = LayerMapper::LOW;
+                    break;
+                case 1:
+                    project->GetLayerMapper().nozzleQuality = LayerMapper::MEDIUM;
+                    break;
+                case 2:
+                    project->GetLayerMapper().nozzleQuality = LayerMapper::HIGH;
+                    break;
+                default:
+                    project->GetLayerMapper().nozzleQuality = LayerMapper::MEDIUM;
+                    break;
+                }
                 project->Generate3DMeshFromLayers(); 
             }
         } else {
             ImGui::Text("No Project Loaded.");
         }
+
+        // LayerMapper Options
+        ImGui::Separator();
+        ImGui::Text("Layer Mapper Settings:");
+        ImGui::SliderFloat("Nozzle Diameter", &nozzleDiameter, 0.1f, 1.0f);
+        // Nozzle Quality Selection
+        const char* qualityItems[] = { "Low", "Medium", "High" };
+        ImGui::Combo("Nozzle Quality", &qualityIndex, qualityItems, IM_ARRAYSIZE(qualityItems));
+
+
 
         if (ImGui::Button("Run Test Sample Model")){
             // Nozzle2D nozzle = LayerMapper::Generate2DNozzlePolygon(0.4f, LayerMapper::MEDIUM);
@@ -54,5 +82,11 @@ class ModelGenUI: public UI{
         ImGui::End();
     }
     public:
-    ModelGenUI(RootUICtx* rootUI) : UI(rootUI) {}
+    ModelGenUI(RootUICtx* rootUICtx) : UI(rootUICtx) {
+        Project* project = rootUICtx->getProject();
+        LayerMapper& layerMapper = project->GetLayerMapper();
+        
+        qualityIndex = layerMapper.nozzleQuality;
+        nozzleDiameter = layerMapper.nozzle.diameter;
+    }
 };
