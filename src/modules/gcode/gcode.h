@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <vector>
 #include "../file/file.h"
@@ -86,7 +87,7 @@ struct GCodeMachineState{
     }
 };
 
-struct GcodePath{
+struct GCodePath{
     GCodeMachineState state;
     int start;
     int end;
@@ -103,10 +104,16 @@ struct GCodeProgramCommand{
     std::vector<GCodeArgument> arguments;
 };
 
+struct GCodeLayer{
+    float zHeight;
+    std::vector<GCodePoint> points;
+    std::vector<GCodePath> paths;
+};
+
 class GCodeModule{
 public:
     std::vector<GCodePoint> points;
-    std::vector<GcodePath> paths;
+    std::vector<GCodePath> paths;
     GCodeMachineState state;
     FilePath* currentFile;
 
@@ -116,6 +123,8 @@ public:
 
     void ExtractPointsAndPaths();
     Object ConvertPathToRenderObject();
+
+    std::vector<GCodeLayer> ExtractLayers();
 
     void SavePointsAndPathsToObj(const char* outputPath);
 

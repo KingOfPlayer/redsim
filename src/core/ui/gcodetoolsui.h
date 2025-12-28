@@ -40,22 +40,24 @@ class GCodeTools : public UI {
         RootUICtx* ctx = GetRootUIContext();
         Project* project = ctx->getProject();
 
-        if(project != nullptr){
+        if(project->isProjectLoaded()){
             FilePath* currentFile = project->GetCurrentGCodeFilePath();
             if(currentFile != nullptr){
                 ImGui::Text("Current GCode File: %s", currentFile->path);
                 if(ImGui::Button("Genrate Render Object from GCode")){
                     project->GenerateRenderObjectFromGCode();
                 }
+                if(ImGui::Button("Extract Gcode Layers")){
+                     project->ExtractLayers();
+                }
             } else {
                 ImGui::Text("No GCode File Loaded.");
             }
-            
+        } else {
+            ImGui::Text("No Project Loaded.");
             if(ImGui::Button("Load GCode File into Project")){
                 std::thread(LoadFileIntoProject, project).detach();
             }
-        } else {
-            ImGui::Text("No Project Loaded.");
         }
 
         if (ImGui::Button("Load GCode File and Extract Paths as OBJ")) {

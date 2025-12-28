@@ -1,7 +1,4 @@
-//#include "WindowManager.h"
-//#include "renderer.h"
-
-#include "Window.h"
+#include "window.h"
 class Core{
 Window* window;
 

@@ -6,6 +6,7 @@
 
 #include "gcodetoolsui.h"
 #include "viewport.h"
+#include "modelgenui.h"
 
 class RootUI {
 RootUICtx* rootUICtx;
@@ -29,6 +30,8 @@ public:
         addUI(gcodeToolsUI);
         Viewport* viewportUI = new Viewport(rootUICtx);
         addUI(viewportUI);
+        ModelGenUI* modelGenUI = new ModelGenUI(rootUICtx);
+        addUI(modelGenUI);
     }
 
     ~RootUI() {

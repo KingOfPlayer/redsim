@@ -31,9 +31,9 @@ foreach(lib ${EXTERNAL_LIBS})
     message(CHECK_START "${lib} Fetching")
     FetchContent_MakeAvailable(${lib})
     
-    if(${lib} STREQUAL "glfw")
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/glad)
-    endif()
+    # if(${lib} STREQUAL "glfw")
+    #     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/glad)
+    # endif()
 
     #imgui specific library setup
     if(${lib} STREQUAL "imgui")
@@ -65,3 +65,6 @@ foreach(lib ${EXTERNAL_LIBS})
     message(CHECK_PASS "Fetched")
 endforeach()
 
+# Glad setup
+message("glad does not have a CMakeLists.txt, setting up manually.")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/glad)

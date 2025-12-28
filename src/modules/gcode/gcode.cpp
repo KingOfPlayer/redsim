@@ -137,7 +137,7 @@ void GCodeModule::ProcessGCommand(const GCodeProgramCommand &cmd)
     case 0: // G0 - Rapid Move
     case 1: // G1 - Linear Move
     {
-        GcodePath path;
+        GCodePath path;
         GCodePoint newPoint = state.GetPosition();
         bool isMove = false;
         bool isExtrusionMove = false;
@@ -357,4 +357,39 @@ Object GCodeModule::ConvertPathToRenderObject() {
 
     glBindVertexArray(0);
     return obj;
+}
+
+std::vector<GCodeLayer> GCodeModule::ExtractLayers() {
+    std::vector<GCodeLayer> layers;
+    if (points.empty()) return layers;
+
+    // Sort points by Z height
+    std::map<float, std::vector<int>> zToPointIndices;
+    for (size_t i = 0; i < points.size(); ++i) {
+        zToPointIndices[points[i].z].push_back((int)i);
+    }
+
+    // Create layers based on unique Z heights
+    for (const auto& [zHeight, pointIndices] : zToPointIndices) {
+        GCodeLayer layer;
+        layer.zHeight = zHeight;
+
+        // Add points to layer
+        for (int idx : pointIndices) {
+            layer.points.push_back(points[idx]);
+        }
+
+        // Add paths to layer
+        for (const auto& path : paths) {
+            GCodePoint startPoint = points[path.start];
+            GCodePoint endPoint = points[path.end];
+            if (startPoint.z == zHeight && endPoint.z == zHeight) {
+                layer.paths.push_back(path);
+            }
+        }
+
+        layers.push_back(layer);
+    }
+
+    return layers;
 }

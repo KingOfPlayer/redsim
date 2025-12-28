@@ -1,6 +1,7 @@
 #include "../gcode/gcode.h"
 class Project {
 GCodeModule gcodeModule;
+bool isGCodeFileLoaded = false;
 bool isGCodeRenderObjectGenerated = false;
 Object GCodeRenderObject;
 public:
@@ -14,7 +15,7 @@ public:
     void LoadGCode(FilePath* filepath){
         gcodeModule.OpenFile(filepath);
         gcodeModule.ExtractPointsAndPaths();
-        GenerateRenderObjectFromGCode();
+        isGCodeFileLoaded = true;
     }
 
     FilePath* GetCurrentGCodeFilePath(){
@@ -32,5 +33,15 @@ public:
 
     Object GetGCodeRenderObject(){
         return GCodeRenderObject;
+    }
+
+    bool isProjectLoaded(){
+        return isGCodeFileLoaded;
+    }
+
+    void ExtractLayers(){
+        std::vector<GCodeLayer> layers = gcodeModule.ExtractLayers();
+
+        printf("Extracted %zu layers from GCode.\n", layers.size());
     }
 };
