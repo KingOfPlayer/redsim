@@ -210,6 +210,11 @@ public:
                 Object gcodeObj = project->GetGCodeRenderObject();
                 renderer->DrawObject(gcodeObj, shaderProgram);
             }
+
+            if(project->HasMeshGenerated() != false){
+                Object meshObj = project->GetMeshRenderObject();
+                renderer->DrawObject(meshObj, shaderProgram);
+            }
         }
 
         renderer->DrawEnd();

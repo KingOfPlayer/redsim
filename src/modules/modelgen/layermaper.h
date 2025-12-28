@@ -8,6 +8,7 @@
 #include <CGAL/create_straight_skeleton_2.h>
 #include <CGAL/create_offset_polygons_2.h>
 #include <CGAL/Polygon_mesh_processing/extrude.h>
+#include <CGAL/Polygon_mesh_processing/corefinement.h>
 #include <CGAL/Boolean_set_operations_2.h>
 
 #include <CGAL/Surface_mesh.h>
@@ -62,10 +63,17 @@ public:
         MEDIUM,
         HIGH
     }; 
-    static Nozzle2D Generate2DNozzlePolygon(float diameter,NozzleQuality quality)
+NozzleQuality nozzleQuality = MEDIUM;
+Nozzle2D nozzle;
+
+    LayerMapper() {
+        nozzle = Generate2DNozzlePolygon(0.4f);
+    }
+
+    Nozzle2D Generate2DNozzlePolygon(float diameter)
     {
         int num_points = 8;
-        switch (quality)
+        switch (nozzleQuality)
         {
         case LOW:
             num_points = 8;
@@ -93,7 +101,7 @@ public:
         return nozzle;
     }
 
-    static Polygon_2 place_nozzle_at(Polygon_2 nozzle, Point_2 vertex) {
+    Polygon_2 place_nozzle_at(Polygon_2 nozzle, Point_2 vertex) {
         Polygon_2 translated_nozzle;
 
         for (const auto &pt : nozzle.vertices()) {
@@ -115,7 +123,7 @@ public:
         return translated_nozzle;
     }
 
-    static std::list<Polygon_with_holes_2> GenerateLayerFromPaths(Nozzle2D nozzle, std::vector<GCodePoint> points, std::vector<GCodePath> paths)
+    std::list<Polygon_with_holes_2> GenerateLayerFromPaths(std::vector<GCodePoint> points, std::vector<GCodePath> paths)
     {
         double thickness = nozzle.diameter; // Example thickness for the extrusion
         Polygon_set_2 merger;
@@ -166,24 +174,22 @@ public:
 
         }
 
-        printf("Merging polygons.\n");
-
         // 4. Extract result
         std::list<Polygon_with_holes_2> final_output;
         merger.polygons_with_holes(std::back_inserter(final_output));
 
-        printf("Generated layer with %zu polygons.\n", final_output.size());
-        for (const auto &pwh : final_output) {
-            printf("Polygon with %zu outer vertices and %zu holes.\n", pwh.outer_boundary().size(), std::distance(pwh.holes_begin(), pwh.holes_end()));
-            for (const auto &pt : pwh.outer_boundary().vertices()) {
-                printf("  (%.2f, %.2f)\n", CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
-            }
-        }
+        // printf("Generated layer with %zu polygons.\n", final_output.size());
+        // for (const auto &pwh : final_output) {
+        //     printf("Polygon with %zu outer vertices and %zu holes.\n", pwh.outer_boundary().size(), std::distance(pwh.holes_begin(), pwh.holes_end()));
+        //     for (const auto &pt : pwh.outer_boundary().vertices()) {
+        //         printf("  (%.2f, %.2f)\n", CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
+        //     }
+        // }
 
         return final_output;
     }
 
-    static void Extrude2DLayerTo3D(std::list<Polygon_with_holes_2> layer, float layer_height)
+    Mesh Extrude2DLayerTo3D(std::list<Polygon_with_holes_2> layer, float layer_height)
     {
         
         Mesh flat_mesh;
@@ -204,6 +210,9 @@ public:
             boost::associative_property_map< std::unordered_map<Face_handle,bool> >
                 in_domain(in_domain_map);
         
+        printf("Triangulating layer.\n");
+
+        // 3. Mark facets that are inside the domain
         CGAL::mark_domain_in_triangulation(cdt, in_domain);
 
         std::map<CDT::Vertex_handle, Mesh::Vertex_index> v_map;
@@ -236,16 +245,113 @@ public:
             Point_3 p = extruded_layer.point(v);
             printf("v %.4f %.4f %.4f\n", CGAL::to_double(p.x()), CGAL::to_double(p.y()), CGAL::to_double(p.z()));
         }
-        for (const auto &f : extruded_layer.faces()) {
+        // for (const auto &f : extruded_layer.faces()) {
+        //     std::vector<Mesh::Vertex_index> face_vertices;
+        //     for (const auto &v : CGAL::vertices_around_face(extruded_layer.halfedge(f), extruded_layer)) {
+        //         face_vertices.push_back(v);
+        //     }
+        //     printf("f");
+        //     for (const auto &v : face_vertices) {
+        //         printf(" %zu", static_cast<size_t>(v) + 1);
+        //     }
+        //     printf("\n");
+        // }
+
+        return extruded_layer;
+    }
+
+    Mesh MergeLayersToModel(std::vector<Mesh> layers)
+    {
+        Mesh final_model;
+
+        for (auto &layer : layers) {
+            CGAL::Polygon_mesh_processing::corefine_and_compute_union(final_model, layer, final_model);
+        }
+
+        printf("Merged %zu layers into final model with %zu vertices and %zu faces.\n",
+                layers.size(),
+                final_model.number_of_vertices(),
+                final_model.number_of_faces());
+
+        return final_model;
+    }
+
+    Object MeshToRenderObject(const Mesh mesh)
+    {
+        Object obj;
+        obj.drawMode = GL_TRIANGLES;
+        obj.useIndices = true;
+        obj.color = glm::vec4(0.2f, 0.7f, 0.3f, 1.0f); // Greenish
+        
+        std::vector<float> vertices;
+        std::vector<unsigned int> indices;
+
+        std::map<Mesh::Vertex_index, uint32_t> vertex_index_map;
+        uint32_t current_index = 0;
+
+        for (const auto &v : mesh.vertices()) {
+            Point_3 p = mesh.point(v);
+            vertices.push_back(CGAL::to_double(p.x()));
+            vertices.push_back(CGAL::to_double(p.y()));
+            vertices.push_back(CGAL::to_double(p.z()));
+            vertex_index_map[v] = current_index++;
+        }
+
+        for (const auto &f : mesh.faces()) {
             std::vector<Mesh::Vertex_index> face_vertices;
-            for (const auto &v : CGAL::vertices_around_face(extruded_layer.halfedge(f), extruded_layer)) {
+            for (const auto &v : CGAL::vertices_around_face(mesh.halfedge(f), mesh)) {
                 face_vertices.push_back(v);
             }
-            printf("f");
-            for (const auto &v : face_vertices) {
-                printf(" %zu", static_cast<size_t>(v) + 1);
+            if (face_vertices.size() == 3) {
+                indices.push_back(vertex_index_map[face_vertices[0]]);
+                indices.push_back(vertex_index_map[face_vertices[1]]);
+                indices.push_back(vertex_index_map[face_vertices[2]]);
             }
-            printf("\n");
         }
+
+        obj.vertexCount = static_cast<uint32_t>(indices.size());
+
+            // 3. Generate and Bind VAO
+        glGenVertexArrays(1, &obj.VAO);
+        glBindVertexArray(obj.VAO);
+
+        // 4. Create VBO (Vertex Data)
+        GLuint vbo;
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+
+        // 5. Create EBO (Index Data)
+        GLuint ebo;
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * indices.size(), indices.data(), GL_STATIC_DRAW);
+
+        // 6. Set Attribute Protocol (Location 0 = Position)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Unbind to stay clean
+        glBindVertexArray(0);
+
+        return obj;
+    }
+
+    Object CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
+    {
+        std::vector<Mesh> layer_meshes;
+
+        // Test first layer only
+        int i = 0;
+        for (const auto &layer : layers) {
+            if (i++ > 0) break;
+            std::list<Polygon_with_holes_2> layer_polygons = GenerateLayerFromPaths(layer.points, layer.paths);
+            Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.zHeight);
+            layer_meshes.push_back(layer_mesh);
+        }
+
+        Mesh final_model = MergeLayersToModel(layer_meshes);
+        Object MeshRenderObject = MeshToRenderObject(final_model);
+        return MeshRenderObject;
     }
 };
