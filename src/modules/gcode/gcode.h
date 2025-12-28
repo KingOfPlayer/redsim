@@ -105,7 +105,8 @@ struct GCodeProgramCommand{
 };
 
 struct GCodeLayer{
-    float zHeight;
+    float layer;
+    float layerHeight;
     std::vector<GCodePoint> points;
     std::vector<GCodePath> paths;
 };

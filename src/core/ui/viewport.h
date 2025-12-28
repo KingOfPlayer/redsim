@@ -213,7 +213,7 @@ public:
 
             if(project->HasMeshGenerated() != false){
                 Object meshObj = project->GetMeshRenderObject();
-                renderer->DrawObject(meshObj, shaderProgram);
+                renderer->DrawObject(meshObj, shaderProgram, true);
             }
         }
 

@@ -70,7 +70,7 @@ public:
         viewProj = vp;
     }
 
-    void DrawObject(class Object& obj, GLuint shaderProgram) {
+    void DrawObject(class Object& obj, GLuint shaderProgram, bool wireframe=false) {
         glUseProgram(shaderProgram);
 
         // Calculate MVP: Perspective * View * Model
@@ -91,10 +91,30 @@ public:
         glUniform4fv(colorLoc, 1, glm::value_ptr(obj.color));
 
         glBindVertexArray(obj.VAO);
+
         if(obj.useIndices)
             glDrawElements(obj.drawMode, obj.vertexCount, GL_UNSIGNED_INT, 0);
         else
             glDrawArrays(obj.drawMode, 0, obj.vertexCount);
+
+        if(wireframe) {
+            glEnable(GL_POLYGON_OFFSET_LINE);
+            glPolygonOffset(-1.0, -1.0);
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+            glm::vec4 wireColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); 
+            glUniform4fv(colorLoc, 1, glm::value_ptr(wireColor));
+
+            if(obj.useIndices)
+                glDrawElements(obj.drawMode, obj.vertexCount, GL_UNSIGNED_INT, 0);
+            else
+                glDrawArrays(obj.drawMode, 0, obj.vertexCount);
+                
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glDisable(GL_POLYGON_OFFSET_LINE);
+        }
+
         glBindVertexArray(0);
     }
 

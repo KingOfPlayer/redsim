@@ -17,6 +17,7 @@
 #include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/mark_domain_in_triangulation.h>
+#include <CGAL/Polygon_mesh_processing/remesh.h>
 
 #include <boost/property_map/property_map.hpp>
 
@@ -113,7 +114,7 @@ Nozzle2D nozzle;
         if (translated_nozzle.is_clockwise_oriented()) translated_nozzle.reverse_orientation();
         
         /*
-            printf("Placed nozzle at (%.2f, %.2f) with %zu points.\n", CGAL::to_double(vertex.x()), CGAL::to_double(vertex.y()), translated_nozzle.size());
+            printf("Placed nozzle at (%.2f, %.2f) with %lu points.\n", CGAL::to_double(vertex.x()), CGAL::to_double(vertex.y()), translated_nozzle.size());
             printf("Nozzle points:\n");
             for (const auto &pt : translated_nozzle.vertices()) {
                 printf("  (%.2f, %.2f)\n", CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
@@ -136,7 +137,7 @@ Nozzle2D nozzle;
             GCodePoint p2 = points[path.end];
 
             // 1. Calculate the direction vector and the perpendicular (normal) vector
-            Vector_2 direction(Point_2(p1.x, p1.y), Point_2(p2.x, p2.y));
+            Vector_2 direction(Point_2(p1.x, p1.z), Point_2(p2.x, p2.z));
             
             // Skip zero-length segments
             if (direction.squared_length() == 0) continue;
@@ -146,10 +147,10 @@ Nozzle2D nozzle;
             Vector_2 normal(-direction.y() * (half_w / len), direction.x() * (half_w / len));
 
             Polygon_2 rect;
-            Point_2 a(p1.x + CGAL::to_double(normal.x()), p1.y + CGAL::to_double(normal.y()));
-            Point_2 b(p2.x + CGAL::to_double(normal.x()), p2.y + CGAL::to_double(normal.y()));
-            Point_2 c(p2.x - CGAL::to_double(normal.x()), p2.y - CGAL::to_double(normal.y()));
-            Point_2 d(p1.x - CGAL::to_double(normal.x()), p1.y - CGAL::to_double(normal.y()));
+            Point_2 a(p1.x + CGAL::to_double(normal.x()), p1.z + CGAL::to_double(normal.y()));
+            Point_2 b(p2.x + CGAL::to_double(normal.x()), p2.z + CGAL::to_double(normal.y()));
+            Point_2 c(p2.x - CGAL::to_double(normal.x()), p2.z - CGAL::to_double(normal.y()));
+            Point_2 d(p1.x - CGAL::to_double(normal.x()), p1.z - CGAL::to_double(normal.y()));
 
             rect.push_back(a);
             rect.push_back(b);
@@ -161,15 +162,15 @@ Nozzle2D nozzle;
             
             merger.join(rect);
 
-            if(unique_points.find(std::to_string(p1.x) + "," + std::to_string(p1.y)) == unique_points.end()) {
-                Polygon_2 nozzle_start = place_nozzle_at(nozzle.polygon, Point_2(p1.x, p1.y));
+            if(unique_points.find(std::to_string(p1.x) + "," + std::to_string(p1.z)) == unique_points.end()) {
+                Polygon_2 nozzle_start = place_nozzle_at(nozzle.polygon, Point_2(p1.x, p1.z));
                 merger.join(nozzle_start);
-                unique_points.insert(std::to_string(p1.x) + "," + std::to_string(p1.y));
+                unique_points.insert(std::to_string(p1.x) + "," + std::to_string(p1.z));
             }
-            if(unique_points.find(std::to_string(p2.x) + "," + std::to_string(p2.y)) == unique_points.end()) {
-                Polygon_2 nozzle_end =  place_nozzle_at(nozzle.polygon, Point_2(p2.x, p2.y));
+            if(unique_points.find(std::to_string(p2.x) + "," + std::to_string(p2.z)) == unique_points.end()) {
+                Polygon_2 nozzle_end =  place_nozzle_at(nozzle.polygon, Point_2(p2.x, p2.z));
                 merger.join(nozzle_end);
-                unique_points.insert(std::to_string(p2.x) + "," + std::to_string(p2.y));
+                unique_points.insert(std::to_string(p2.x) + "," + std::to_string(p2.z));
             }
 
         }
@@ -177,13 +178,13 @@ Nozzle2D nozzle;
         // 4. Extract result
         std::list<Polygon_with_holes_2> final_output;
         merger.polygons_with_holes(std::back_inserter(final_output));
+        
+        // print details of merger
+        
 
-        // printf("Generated layer with %zu polygons.\n", final_output.size());
+        printf("Generated layer with %lu polygons.\n", final_output.size());
         // for (const auto &pwh : final_output) {
-        //     printf("Polygon with %zu outer vertices and %zu holes.\n", pwh.outer_boundary().size(), std::distance(pwh.holes_begin(), pwh.holes_end()));
-        //     for (const auto &pt : pwh.outer_boundary().vertices()) {
-        //         printf("  (%.2f, %.2f)\n", CGAL::to_double(pt.x()), CGAL::to_double(pt.y()));
-        //     }
+        //     printf(" Polygon with %lu outer vertices and %lu holes.\n", pwh.outer_boundary().size(), std::distance(pwh.holes_begin(), pwh.holes_end()));
         // }
 
         return final_output;
@@ -224,7 +225,7 @@ Nozzle2D nozzle;
                     auto vh = f->vertex(i);
                     if (v_map.find(vh) == v_map.end()) {
                         Point_2 p2 = vh->point();
-                        v_map[vh] = flat_mesh.add_vertex(Point_3(p2.x(), p2.y(), 0));
+                        v_map[vh] = flat_mesh.add_vertex(Point_3(p2.x(), 0, p2.y()));
                     }
                     vi[i] = v_map[vh];
                 }
@@ -234,28 +235,11 @@ Nozzle2D nozzle;
 
         Mesh extruded_layer;
 
-        CGAL::Polygon_mesh_processing::extrude_mesh(flat_mesh, extruded_layer, K::Vector_3(0, 0, layer_height));
+        CGAL::Polygon_mesh_processing::extrude_mesh(flat_mesh, extruded_layer, K::Vector_3(0, layer_height, 0));
         
-        printf("Extruded layer to 3D mesh with %zu vertices and %zu faces.\n",
+        printf("Extruded layer to 3D mesh with %u vertices and %u faces.\n",
                 extruded_layer.number_of_vertices(),
                 extruded_layer.number_of_faces());
-
-        // print mesh virable as obj file to console
-        for (const auto &v : extruded_layer.vertices()) {
-            Point_3 p = extruded_layer.point(v);
-            printf("v %.4f %.4f %.4f\n", CGAL::to_double(p.x()), CGAL::to_double(p.y()), CGAL::to_double(p.z()));
-        }
-        // for (const auto &f : extruded_layer.faces()) {
-        //     std::vector<Mesh::Vertex_index> face_vertices;
-        //     for (const auto &v : CGAL::vertices_around_face(extruded_layer.halfedge(f), extruded_layer)) {
-        //         face_vertices.push_back(v);
-        //     }
-        //     printf("f");
-        //     for (const auto &v : face_vertices) {
-        //         printf(" %zu", static_cast<size_t>(v) + 1);
-        //     }
-        //     printf("\n");
-        // }
 
         return extruded_layer;
     }
@@ -268,12 +252,28 @@ Nozzle2D nozzle;
             CGAL::Polygon_mesh_processing::corefine_and_compute_union(final_model, layer, final_model);
         }
 
-        printf("Merged %zu layers into final model with %zu vertices and %zu faces.\n",
+        printf("Merged %lu layers into final model with %u vertices and %u faces.\n",
                 layers.size(),
                 final_model.number_of_vertices(),
                 final_model.number_of_faces());
 
         return final_model;
+    }
+
+    Mesh RemeshModel(const Mesh model, float target_edge_length)
+    {
+        Mesh remeshed_model = model;
+
+        CGAL::Polygon_mesh_processing::isotropic_remeshing(
+            faces(remeshed_model),
+            target_edge_length,
+            remeshed_model,
+            CGAL::Polygon_mesh_processing::parameters::number_of_iterations(3)
+        );
+
+        printf("Remeshed model to target edge length %.4f (placeholder).\n", target_edge_length);
+
+        return remeshed_model;
     }
 
     Object MeshToRenderObject(const Mesh mesh)
@@ -288,12 +288,26 @@ Nozzle2D nozzle;
 
         std::map<Mesh::Vertex_index, uint32_t> vertex_index_map;
         uint32_t current_index = 0;
+        
+        // move to origin
+        glm::vec3 min(1e9), max(-1e9);
+        for (const auto &v : mesh.vertices()) {
+            Point_3 p = mesh.point(v);
+            if(CGAL::to_double(p.x()) < min.x) min.x = CGAL::to_double(p.x());
+            if(CGAL::to_double(p.x()) > max.x) max.x = CGAL::to_double(p.x());
+            if(CGAL::to_double(p.y()) < min.y) min.y = CGAL::to_double(p.y());
+            if(CGAL::to_double(p.y()) > max.y) max.y = CGAL::to_double(p.y());
+            if(CGAL::to_double(p.z()) < min.z) min.z = CGAL::to_double(p.z());
+            if(CGAL::to_double(p.z()) > max.z) max.z = CGAL::to_double(p.z());
+        }
+
+        glm::vec3 center = (min + max) * 0.5f;
 
         for (const auto &v : mesh.vertices()) {
             Point_3 p = mesh.point(v);
-            vertices.push_back(CGAL::to_double(p.x()));
-            vertices.push_back(CGAL::to_double(p.y()));
-            vertices.push_back(CGAL::to_double(p.z()));
+            vertices.push_back(CGAL::to_double(p.x()) - center.x);
+            vertices.push_back(CGAL::to_double(p.y()) - center.y);
+            vertices.push_back(CGAL::to_double(p.z()) - center.z);
             vertex_index_map[v] = current_index++;
         }
 
@@ -344,13 +358,20 @@ Nozzle2D nozzle;
         // Test first layer only
         int i = 0;
         for (const auto &layer : layers) {
-            if (i++ > 0) break;
+            if (i++ == 5) break;
             std::list<Polygon_with_holes_2> layer_polygons = GenerateLayerFromPaths(layer.points, layer.paths);
-            Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.zHeight);
+            Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight); // Example layer height
+            //layer_mesh = RemeshModel(layer_mesh, 0.5f); // Example target edge length
             layer_meshes.push_back(layer_mesh);
+            printf("Processed layer at Z=%.2f with %lu paths into mesh with %u vertices and %u faces.\n",
+                    layer.layer,
+                    layer.paths.size(),
+                    layer_mesh.number_of_vertices(),
+                    layer_mesh.number_of_faces());
         }
 
         Mesh final_model = MergeLayersToModel(layer_meshes);
+        //final_model = RemeshModel(final_model, 0.005f); // Example target edge length
         Object MeshRenderObject = MeshToRenderObject(final_model);
         return MeshRenderObject;
     }

@@ -362,59 +362,78 @@ Object GCodeModule::ConvertPathToRenderObject() {
 
 std::vector<GCodeLayer> GCodeModule::ExtractLayers() {
     std::vector<GCodeLayer> layers;
-    if (points.empty()) return layers;
+    float layer_height = 0.0f;
+    float last_y = 0.0f;
+    
+    if (paths.empty()) {
+        printf("No paths available to extract layers.\n");
+        return layers;
+    }
 
-    // Map to track global point index -> local point index for EACH layer
-    // Format: layers[layer_index] -> map<global_idx, local_idx>
-    std::vector<std::map<int, int>> layerPointMaps;
+    auto getLayerWithY = [&](float y) -> GCodeLayer* {
+        for (auto& layer : layers) {
+            if (layer.layer == y) {
+                return &layer;
+            }
+        }
+        return nullptr;
+    }; 
 
-    for (const auto& path : paths) {
-        GCodePoint startPoint = points[path.start];
-        GCodePoint endPoint = points[path.end];
+    int global_index = 0;
+    for(auto & path : paths) {
+        GCodePoint startPoint = points[path.start-1]; // Adjust for 0-based index
+        GCodePoint endPoint = points[path.end-1];
 
-        if (std::abs(startPoint.y - endPoint.y) > 1e-5) { // Floating point safe comparison
-            printf("Warning: Path has different Z heights. Skipping path Points: (%.4f,%.4f,%.4f) and (%.4f,%.4f,%.4f)\n", startPoint.x, startPoint.y, startPoint.z, endPoint.x, endPoint.y, endPoint.z);
+        if(startPoint.y != endPoint.y) {
+            printf("Warning: Path with differing Z heights (start: %.2f, end: %.2f). Using start height.\n", startPoint.y, endPoint.y);
             continue;
         }
 
-        float zHeight = startPoint.z;
-
-        // 1. Find or Create the layer
-        auto it = std::find_if(layers.begin(), layers.end(), [zHeight](const GCodeLayer& layer) {
-            return std::abs(layer.zHeight - zHeight) < 1e-5;
-        });
-
-        size_t layerIdx;
-        if (it == layers.end()) {
-            GCodeLayer newLayer;
-            newLayer.zHeight = zHeight;
-            layers.push_back(newLayer);
-            layerPointMaps.push_back({}); // New map for this layer
-            layerIdx = layers.size() - 1;
-        } else {
-            layerIdx = std::distance(layers.begin(), it);
+        if(last_y == 0.0f) {
+            last_y = startPoint.y;
+            layer_height = startPoint.y;
+        }else if(last_y != startPoint.y) {
+            layer_height = fabs(startPoint.y - last_y);
+            last_y = startPoint.y;
         }
 
-        GCodeLayer& currentLayer = layers[layerIdx];
-        std::map<int, int>& currentMap = layerPointMaps[layerIdx];
+        GCodeLayer* layer = getLayerWithY(startPoint.y);
+        if(layer == nullptr) {
+            GCodeLayer newLayer;
+            newLayer.layer = startPoint.y;
+            newLayer.layerHeight = layer_height;
+            layers.push_back(newLayer);
+            layer = &layers.back();
+        }
 
-        // 2. Helper lambda to get/add local index
-        auto getLocalIndex = [&](int globalIdx) {
-            if (currentMap.find(globalIdx) == currentMap.end()) {
-                // Point not in layer yet, copy it and record new index
-                currentLayer.points.push_back(points[globalIdx]);
-                currentMap[globalIdx] = static_cast<int>(currentLayer.points.size() - 1);
-            }
-            return currentMap[globalIdx];
-        };
+        GCodePath layerPath;
 
-        // 3. Create the local path
-        GCodePath localPath = path; // Copy properties (like feedrate, type)
-        localPath.start = getLocalIndex(path.start);
-        localPath.end = getLocalIndex(path.end);
+        // reindex points and path to insert into layer
+        
+        // start index - end index checking
 
-        currentLayer.paths.push_back(localPath);
+        int startIndex = (int)layer->points.size();
+        if(startIndex == 0) {
+            layer->points.push_back(startPoint);
+            layerPath.start = 0;
+            layerPath.end = 1;
+        }else if(layer->points.back().x == startPoint.x &&
+           layer->points.back().y == startPoint.y &&
+           layer->points.back().z == startPoint.z ) {
+            layerPath.start = startIndex-1;
+            layerPath.end = startIndex;
+        }else{
+            layer->points.push_back(startPoint);
+            layerPath.start = startIndex;
+            layerPath.end = startIndex + 1;
+        }
+        layer->points.push_back(endPoint);
+        layerPath.state = path.state;
+        layer->paths.push_back(layerPath);
     }
+
+
+    printf("Extracted %zu layers from GCode.\n", layers.size());
 
     return layers;
 }
