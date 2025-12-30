@@ -404,6 +404,7 @@ std::vector<GCodeLayer> GCodeModule::ExtractLayers() {
             newLayer.layerHeight = layer_height;
             layers.push_back(newLayer);
             layer = &layers.back();
+            printf("Created new layer at Z=%.2f with height %.2f\n", newLayer.layer, newLayer.layerHeight);
         }
 
         GCodePath layerPath;

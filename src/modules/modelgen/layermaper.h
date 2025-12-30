@@ -18,13 +18,22 @@
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/mark_domain_in_triangulation.h>
 #include <CGAL/Polygon_mesh_processing/remesh.h>
+#include <CGAL/Polygon_mesh_processing/detect_features.h>
+
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/boost/graph/convert_nef_polyhedron_to_polygon_mesh.h>
 
 #include <boost/property_map/property_map.hpp>
+#include <deque>
+#include <future>
+
 
 #include "../gcode/gcode.h"
 #pragma once
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
+//typedef CGAL::Exact_predicates_inexact_constructions_kernel   K;
 typedef K::Point_2 Point_2;
 typedef K::Vector_2                                       Vector_2;
 typedef K::Point_3                                        Point_3;
@@ -34,7 +43,8 @@ typedef CGAL::Straight_skeleton_2<K> Straight_skeleton_2;
 typedef CGAL::Polygon_with_holes_2<K>         Polygon_with_holes_2;
 typedef CGAL::Polygon_set_2<K>        Polygon_set_2;
 typedef CGAL::Surface_mesh<Point_3>                       Mesh;
-
+typedef CGAL::Polyhedron_3<K> Polyhedron;
+typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
 
 struct FaceInfo2 {
     bool nesting_level;
@@ -49,6 +59,9 @@ typedef CGAL::Exact_intersections_tag                           Itag;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag> CDT;
 
 typedef CDT::Face_handle                                          Face_handle;
+
+
+typedef boost::property_map<Mesh, CGAL::edge_is_feature_t>::type EIFMap;
 
 struct Nozzle2D {
     Polygon_2 polygon;
@@ -65,8 +78,9 @@ public:
         HIGH = 2
     }; 
 NozzleQuality nozzleQuality = MEDIUM;
-
 Nozzle2D nozzle;
+bool Nef_based = false;
+bool remesh_after_layers = false;
 
     LayerMapper() {
         Set2DNozzlePolygon(0.46f);
@@ -257,36 +271,65 @@ Nozzle2D nozzle;
         return extruded_layer;
     }
 
-    Mesh MergeLayersToModel(std::vector<Mesh> layers)
-    {
-        Mesh final_model;
-
-        for (auto &layer : layers) {
-            CGAL::Polygon_mesh_processing::corefine_and_compute_union(final_model, layer, final_model);
-        }
-
-        printf("Merged %lu layers into final model with %u vertices and %u faces.\n",
-                layers.size(),
-                final_model.number_of_vertices(),
-                final_model.number_of_faces());
-
-        return final_model;
+    static Mesh MergeTwoMesh(Mesh m1, Mesh m2) {
+        Mesh result;
+        CGAL::Polygon_mesh_processing::corefine_and_compute_union(m1, m2, result);
+        return result;
     }
 
-    Mesh RemeshModel(const Mesh model, float target_edge_length)
+    Mesh UnionMergeLayersToModel(std::vector<Mesh> layers)
     {
-        Mesh remeshed_model = model;
+        if (layers.empty()) return Mesh();
+
+        // Move meshes into a deque for easy manipulation
+        std::deque<Mesh> meshes;
+        for (auto& l : layers) meshes.push_back(std::move(l));
+
+        while (meshes.size() > 1) {
+            std::vector<std::future<Mesh>> futures;
+            
+            // Process current meshes in pairs
+            while (meshes.size() >= 2) {
+                Mesh m1 = std::move(meshes.front()); meshes.pop_front();
+                Mesh m2 = std::move(meshes.front()); meshes.pop_front();
+                
+                // Launch parallel merge task
+                futures.push_back(std::async(std::launch::async, MergeTwoMesh, 
+                                std::move(m1), std::move(m2)));
+            }
+
+            // Collect results and push back into the queue for the next level
+            for (auto& f : futures) {
+                meshes.push_back(f.get());
+            }
+            
+            // Note: If an odd number of meshes existed, the "leftover" one 
+            // stays in the deque and gets paired in the next round.
+        }
+
+        return std::move(meshes.front());
+    }
+
+    Mesh RemeshModel(Mesh model, float target_edge_length)
+    {
+        if(!CGAL::is_triangle_mesh(model)) {
+            CGAL::Polygon_mesh_processing::triangulate_faces(model);
+        }
+
+        EIFMap eif = get(CGAL::edge_is_feature, model);
+        CGAL::Polygon_mesh_processing::detect_sharp_edges(model, 45, eif);
 
         CGAL::Polygon_mesh_processing::isotropic_remeshing(
-            faces(remeshed_model),
+            model.faces(),
             target_edge_length,
-            remeshed_model,
-            CGAL::Polygon_mesh_processing::parameters::number_of_iterations(3)
+            model,
+            CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(eif)
+            .number_of_iterations(1)
         );
 
         printf("Remeshed model to target edge length %.4f (placeholder).\n", target_edge_length);
 
-        return remeshed_model;
+        return model;
     }
 
     Object MeshToRenderObject(const Mesh mesh)
@@ -338,7 +381,12 @@ Nozzle2D nozzle;
 
         obj.vertexCount = static_cast<uint32_t>(indices.size());
 
-            // 3. Generate and Bind VAO
+        // Print details
+        printf("Converted mesh to render object with %u vertices and %u indices.\n",
+                (uint32_t)(vertices.size() / 3),
+                (uint32_t)indices.size());
+
+        // 3. Generate and Bind VAO
         glGenVertexArrays(1, &obj.VAO);
         glBindVertexArray(obj.VAO);
 
@@ -364,16 +412,60 @@ Nozzle2D nozzle;
         return obj;
     }
 
+    Nef_polyhedron MeshToNef(const Mesh& m) {
+        if (m.is_empty()) return Nef_polyhedron();
+        
+        if (!CGAL::is_closed(m)) {
+            printf("Warning: Mesh is not closed. Nef conversion may fail.\n");
+        }
+
+        return Nef_polyhedron(m); 
+    }
+
+    Mesh NefToMesh(const Nef_polyhedron& nef) {
+        Mesh m;
+
+        if (nef.is_simple()) { // Check if it can be represented as a standard mesh
+            CGAL::convert_nef_polyhedron_to_polygon_mesh(nef, m);
+        }
+
+        return m;
+    }
+
+    Mesh NefMergeLayersToModel(std::vector<Mesh> layers)
+    {
+        Nef_polyhedron merge_nef;
+        int completed = 0;
+        int total = layers.size();
+        for (const auto& m : layers) {
+            printf("Merging layer %d/%d into Nef model...\n", ++completed, total);
+            Nef_polyhedron layer_nef = MeshToNef(m);
+
+            if (merge_nef.is_empty()) {
+                merge_nef = layer_nef;
+            } else {
+                merge_nef += layer_nef; // The += operator is optimized for Nef
+                merge_nef.regularization(); 
+            }
+        }
+        merge_nef.regularization(); 
+        Mesh final_result = NefToMesh(merge_nef);
+        return final_result;
+    }
+
+
     Object CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
     {
         std::vector<Mesh> layer_meshes;
 
-        // Test first layer only
         int i = 0;
         for (const auto &layer : layers) {
-            if (i++ == 1) break;
+            // if (i++  == 10) {
+            //     break;
+            // }
             std::list<Polygon_with_holes_2> layer_polygons = GenerateLayerFromPaths(layer.points, layer.paths);
             Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight); // Example layer height
+            ShiftLayer(layer_mesh, layer.layer, layer.layerHeight);
             //layer_mesh = RemeshModel(layer_mesh, 0.5f); // Example target edge length
             layer_meshes.push_back(layer_mesh);
             printf("Processed layer at Z=%.2f with %lu paths into mesh with %u vertices and %u faces.\n",
@@ -383,9 +475,27 @@ Nozzle2D nozzle;
                     layer_mesh.number_of_faces());
         }
 
-        Mesh final_model = MergeLayersToModel(layer_meshes);
-        //final_model = RemeshModel(final_model, 0.005f); // Example target edge length
+        Mesh final_model;
+        if(Nef_based) {
+            final_model = NefMergeLayersToModel(layer_meshes);
+        }else{
+            final_model = UnionMergeLayersToModel(layer_meshes);
+        }
+
+        if(remesh_after_layers)
+            final_model = RemeshModel(final_model, 0.1f);
         Object MeshRenderObject = MeshToRenderObject(final_model);
         return MeshRenderObject;
+    }
+
+    void ShiftLayer(Mesh& extruded_layer, float layer_offset, float layer_height) {
+        double z_offset = layer_offset + layer_height;
+        printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
+        
+        CGAL::Aff_transformation_3<K> translation(CGAL::TRANSLATION, K::Vector_3(0, z_offset, 0));
+
+        for (auto v : extruded_layer.vertices()) {
+            extruded_layer.point(v) = translation.transform(extruded_layer.point(v));
+        }
     }
 };

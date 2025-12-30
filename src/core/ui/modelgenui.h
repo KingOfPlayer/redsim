@@ -9,6 +9,8 @@
 class ModelGenUI: public UI{
     float nozzleDiameter = 0.46f;
     int qualityIndex = 0;
+    bool nef_based = false;
+    bool remesh_after_layers = false;
     void render() override {
         ImGui::Begin("Model Generation Tools");
 
@@ -18,22 +20,25 @@ class ModelGenUI: public UI{
         if(project->isProjectLoaded()){
             if(ImGui::Button("Generate 3D Model from Layers")){
                 printf("Generating 3D Model from Layers...\n");
-                project->GetLayerMapper().Set2DNozzlePolygon(nozzleDiameter);
+                LayerMapper& layerMapper = project->GetLayerMapper();
+                layerMapper.Set2DNozzlePolygon(nozzleDiameter);
                 switch (qualityIndex)
                 {
                 case 0:
-                    project->GetLayerMapper().nozzleQuality = LayerMapper::LOW;
+                    layerMapper.nozzleQuality = LayerMapper::LOW;
                     break;
                 case 1:
-                    project->GetLayerMapper().nozzleQuality = LayerMapper::MEDIUM;
+                    layerMapper.nozzleQuality = LayerMapper::MEDIUM;
                     break;
                 case 2:
-                    project->GetLayerMapper().nozzleQuality = LayerMapper::HIGH;
+                    layerMapper.nozzleQuality = LayerMapper::HIGH;
                     break;
                 default:
-                    project->GetLayerMapper().nozzleQuality = LayerMapper::MEDIUM;
+                    layerMapper.nozzleQuality = LayerMapper::MEDIUM;
                     break;
                 }
+                layerMapper.Nef_based = nef_based;
+                layerMapper.remesh_after_layers = remesh_after_layers;
                 project->Generate3DMeshFromLayers(); 
             }
         } else {
@@ -43,10 +48,13 @@ class ModelGenUI: public UI{
         // LayerMapper Options
         ImGui::Separator();
         ImGui::Text("Layer Mapper Settings:");
+        ImGui::Checkbox("Use Nef-based Merging", &nef_based);
         ImGui::SliderFloat("Nozzle Diameter", &nozzleDiameter, 0.1f, 1.0f);
         // Nozzle Quality Selection
         const char* qualityItems[] = { "Low", "Medium", "High" };
         ImGui::Combo("Nozzle Quality", &qualityIndex, qualityItems, IM_ARRAYSIZE(qualityItems));
+        ImGui::Checkbox("Remesh After Layer Merging", &remesh_after_layers);
+
 
 
 
@@ -88,5 +96,6 @@ class ModelGenUI: public UI{
         
         qualityIndex = layerMapper.nozzleQuality;
         nozzleDiameter = layerMapper.nozzle.diameter;
+        nef_based = layerMapper.Nef_based;
     }
 };

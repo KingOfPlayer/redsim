@@ -64,6 +64,8 @@ public:
         glClearColor(0.5f, 0.5f, 0.5f, 1.0f); // Professional dark grey background
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
     void SetViewProjection(const glm::mat4& vp) {
@@ -97,9 +99,10 @@ public:
         else
             glDrawArrays(obj.drawMode, 0, obj.vertexCount);
 
-        if(wireframe) {
+        if(wireframe && obj.drawMode == GL_TRIANGLES) {
+            glDepthMask(GL_FALSE);
             glEnable(GL_POLYGON_OFFSET_LINE);
-            glPolygonOffset(-1.0, -1.0);
+            glPolygonOffset(-1.0f, -1.0f); // Pull wireframe closer to camera
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -112,7 +115,9 @@ public:
                 glDrawArrays(obj.drawMode, 0, obj.vertexCount);
                 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
             glDisable(GL_POLYGON_OFFSET_LINE);
+            glDepthMask(GL_TRUE);
         }
 
         glBindVertexArray(0);
