@@ -1,14 +1,10 @@
-#pragma once
 #include "../../modules/project/project.h"
+#pragma once
 
 class RootUICtx {
     Project* project;
 public:
-    RootUICtx(Project* proj) : project(proj) {};
-    ~RootUICtx() {
-        delete project;
-    }
-    Project* getProject() {
-        return project;
-    }
+    RootUICtx(Project* proj) : project(proj){};
+    ~RootUICtx();
+    Project* getProject();
 };

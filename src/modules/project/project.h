@@ -1,77 +1,29 @@
 #include "../gcode/gcode.h"
-#include "../modelgen/layermaper.h"
+#include "../modelgen/layermapper.h"
 
 class Project {
-GCodeModule gcodeModule;
-bool isGCodeFileLoaded = false;
-bool isGCodeRenderObjectGenerated = false;
-Object GCodeRenderObject;
+    GCodeModule gcodeModule;
+    bool isGCodeFileLoaded = false;
+    bool isGCodeRenderObjectGenerated = false;
+    Object GCodeRenderObject;
 
-LayerMapper layerMapper;
-bool isMeshGenerated = false;
-Object MeshRenderObject;
+    LayerMapper layerMapper;
+    bool isMeshGenerated = false;
+    Object MeshRenderObject;
 public:
-    Project(){
-        gcodeModule = GCodeModule();
-        layerMapper = LayerMapper();
-    }
-    ~Project(){
+    Project();
+    ~Project();
+    bool isProjectLoaded();
 
-    }
+    void LoadGCode(FilePath* filepath);
+    FilePath* GetCurrentGCodeFilePath();
+    void GenerateRenderObjectFromGCode();
+    bool HasGCodeRenderObject();
+    Object GetGCodeRenderObject();
 
-    void LoadGCode(FilePath* filepath){
-        gcodeModule.OpenFile(filepath);
-        gcodeModule.ExtractPointsAndPaths();
-        isGCodeFileLoaded = true;
-    }
-
-    FilePath* GetCurrentGCodeFilePath(){
-        return gcodeModule.currentFile;
-    }
-
-    void GenerateRenderObjectFromGCode(){
-        GCodeRenderObject = gcodeModule.ConvertPathToRenderObject();
-        isGCodeRenderObjectGenerated = true;
-    }
-
-    bool HasGCodeRenderObject(){
-        return isGCodeRenderObjectGenerated;
-    }
-
-    Object GetGCodeRenderObject(){
-        return GCodeRenderObject;
-    }
-
-    bool isProjectLoaded(){
-        return isGCodeFileLoaded;
-    }
-
-    void ExtractLayers(){
-        std::vector<GCodeLayer> layers = gcodeModule.ExtractLayers();
-
-        printf("Extracted %zu layers from GCode.\n", layers.size());
-    }
-
-    void Generate3DMeshFromLayers(){
-        std::vector<GCodeLayer> layers = gcodeModule.ExtractLayers();
-        
-        //layerMapper.CreateRenderObjectFromMesh(layers);
-
-        MeshRenderObject = layerMapper.CreateRenderObjectFromMesh(layers);
-        isMeshGenerated = true;
-
-        printf("Generated 3D Mesh from Layers.\n");
-    }
-
-    bool HasMeshGenerated(){
-        return isMeshGenerated;
-    }
-
-    Object GetMeshRenderObject(){
-        return MeshRenderObject;
-    }
-
-    LayerMapper& GetLayerMapper(){
-        return layerMapper;
-    }
+    void ExtractLayers();
+    void Generate3DMeshFromLayers();
+    bool HasMeshGenerated();
+    Object GetMeshRenderObject();
+    LayerMapper& GetLayerMapper();
 };

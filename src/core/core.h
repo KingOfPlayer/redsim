@@ -1,20 +1,11 @@
+#pragma once
 #include "window.h"
+
 class Core{
 Window* window;
 
 public:
-    Core(){
-        window = new Window(800, 600, "Main Window");
-    }
-
-    void Run(){
-        while (!window->isWindowShouldClose())
-        {
-            window->update();
-        }
-    }
-
-    ~Core(){
-        delete window;
-    }
+    Core();
+    void Run();
+    ~Core();
 };
