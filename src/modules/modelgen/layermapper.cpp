@@ -349,16 +349,11 @@ Object LayerMapper::CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
 {
     std::vector<Mesh> layer_meshes;
 
-    int i = 0;
+    time_t start_time = time(nullptr); 
     for (const auto &layer : layers) {
-        // Debug
-        // if (i++  == 10) {
-        //     break;
-        // }
         std::list<Polygon_with_holes_2> layer_polygons = GenerateLayerFromPaths(layer.points, layer.paths);
         Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight);
         ShiftLayer(layer_mesh, layer.layer, layer.layerHeight);
-        //layer_mesh = RemeshModel(layer_mesh, 0.5f);
         layer_meshes.push_back(layer_mesh);
         printf("Processed layer at Z=%.2f with %lu paths into mesh with %u vertices and %u faces.\n",
                 layer.layer,
@@ -367,15 +362,30 @@ Object LayerMapper::CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
                 layer_mesh.number_of_faces());
     }
 
+    time_t end_time = time(nullptr);
+    double elapsed = difftime(end_time, start_time);
+    printf("Layer generation and extrusion completed in %.2f seconds.\n", elapsed);
+
+    start_time = time(nullptr);
     Mesh final_model;
     if(Nef_based) {
         final_model = NefMergeLayersToModel(layer_meshes);
     }else{
         final_model = UnionMergeLayersToModel(layer_meshes);
     }
+    end_time = time(nullptr);
+    elapsed = difftime(end_time, start_time);
+    printf("Model merging completed in %.2f seconds.\n", elapsed);
 
-    if(remesh_after_layers)
+
+
+    if(remesh_after_layers){
+        start_time = time(nullptr);
         final_model = RemeshModel(final_model, 0.1f);
+        end_time = time(nullptr);
+        elapsed = difftime(end_time, start_time);
+        printf("Remeshing final model completed in %.2f seconds.\n", elapsed);
+    }
     Object MeshRenderObject = MeshToRenderObject(final_model);
     return MeshRenderObject;
 }

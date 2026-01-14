@@ -20,7 +20,7 @@ void Camera::Pan(float deltaX, float deltaY) {
     glm::vec3 up = glm::normalize(glm::cross(right, forward));
 
     float panSpeed = distance * sensitivity / 100.0f; 
-    glm::vec3 offset = (right * -deltaX * panSpeed) + (up * deltaY * panSpeed);
+    glm::vec3 offset = (right * -deltaX * panSpeed) + (up * -deltaY * panSpeed);
     
     target += offset;
     position += offset;
