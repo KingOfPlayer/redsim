@@ -1,5 +1,3 @@
-
-
 #pragma once
 #include <unordered_set>
 
@@ -34,6 +32,12 @@
 #include "../../core/renderer/object.h"
 
 #include "../gcode/gcode.h"
+
+#include <execution>
+#include <algorithm>
+#include <numeric>
+#include <vector>
+#include <mutex>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;
 //typedef CGAL::Exact_predicates_inexact_constructions_kernel   K;

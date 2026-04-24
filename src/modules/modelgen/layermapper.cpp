@@ -347,20 +347,35 @@ Mesh LayerMapper::NefMergeLayersToModel(std::vector<Mesh> layers)
 
 Object LayerMapper::CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
 {
-    std::vector<Mesh> layer_meshes;
-
     time_t start_time = time(nullptr); 
-    for (const auto &layer : layers) {
-        std::list<Polygon_with_holes_2> layer_polygons = GenerateLayerFromPaths(layer.points, layer.paths);
-        Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight);
-        ShiftLayer(layer_mesh, layer.layer, layer.layerHeight);
-        layer_meshes.push_back(layer_mesh);
-        printf("Processed layer at Z=%.2f with %lu paths into mesh with %u vertices and %u faces.\n",
-                layer.layer,
-                layer.paths.size(),
-                layer_mesh.number_of_vertices(),
-                layer_mesh.number_of_faces());
-    }
+
+    std::vector<Mesh> layer_meshes(layers.size());
+    std::vector<size_t> indices(layers.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    std::mutex print_mutex;
+
+    std::for_each(std::execution::par, indices.begin(), indices.end(),
+        [&](size_t i) {
+            const auto& layer = layers[i];
+
+            std::list<Polygon_with_holes_2> layer_polygons =
+                GenerateLayerFromPaths(layer.points, layer.paths);
+
+            Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight);
+            ShiftLayer(layer_mesh, layer.layer, layer.layerHeight);
+
+            layer_meshes[i] = std::move(layer_mesh);
+
+            {
+                std::lock_guard<std::mutex> lock(print_mutex);
+                printf("Processed layer at Z=%.2f with %lu paths into mesh with %u vertices and %u faces.\n",
+                    layer.layer,
+                    layer.paths.size(),
+                    layer_meshes[i].number_of_vertices(),
+                    layer_meshes[i].number_of_faces());
+            }
+        }
+    );
 
     time_t end_time = time(nullptr);
     double elapsed = difftime(end_time, start_time);
