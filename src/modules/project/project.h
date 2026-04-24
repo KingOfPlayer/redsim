@@ -24,11 +24,11 @@ public:
     FilePath* GetCurrentGCodeFilePath();
     void GenerateRenderObjectFromGCode();
     bool HasGCodeRenderObject();
-    Object& GetGCodeRenderObject();
+    std::unique_ptr<Object>& GetGCodeRenderObject();
 
     void ExtractLayers();
     void Generate3DMeshFromLayers();
     bool HasMeshGenerated();
-    Object& GetMeshRenderObject();
+    std::unique_ptr<Object>& GetMeshRenderObject();
     LayerMapper& GetLayerMapper();
 };

@@ -1,8 +1,10 @@
 #pragma once
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <thread>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 
 class Project;
 class RootUICtx;

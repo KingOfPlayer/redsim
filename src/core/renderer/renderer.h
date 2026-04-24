@@ -24,7 +24,7 @@ public:
 
     void SetViewProjection(const glm::mat4& vp);
 
-    void DrawObject(class Object& obj, GLuint shaderProgram, bool wireframe=false, bool depthMask=true);
+    void DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgram, bool wireframe=false, bool depthMask=true);
 
     void DrawEnd();
 

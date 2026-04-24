@@ -4,11 +4,10 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-#include "rootuictx.h"
-#include "ui.h"
-#include "gcodetoolsui.h"
-#include "viewport.h"
-#include "modelgenui.h"
+struct GLFWwindow;
+
+class RootUICtx;
+class UI;
 
 class RootUI {
 RootUICtx* rootUICtx;

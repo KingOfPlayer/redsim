@@ -1,6 +1,10 @@
 
 #include "modelgenui.h"
 
+#include "../../modules/project/project.h"
+#include "../../modules/gcode/gcode.h"
+#include "../../modules/modelgen/layermapper.h"
+
 void ModelGenUI::render() {
     ImGui::Begin("Model Generation Tools");
 

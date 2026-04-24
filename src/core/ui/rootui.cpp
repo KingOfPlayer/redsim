@@ -1,5 +1,12 @@
 #include "rootui.h"
 
+#include "rootuictx.h"
+#include "ui.h"
+
+#include "gcodetoolsui.h"
+#include "viewport.h"
+#include "modelgenui.h"
+
 RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     // Init IMGUI
     IMGUI_CHECKVERSION();

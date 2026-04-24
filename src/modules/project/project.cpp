@@ -33,8 +33,8 @@ bool Project::HasGCodeRenderObject(){
     return isGCodeRenderObjectGenerated;
 }
 
-Object& Project::GetGCodeRenderObject(){
-    return *GCodeRenderObject;
+std::unique_ptr<Object>& Project::GetGCodeRenderObject(){
+    return GCodeRenderObject;
 }
 
 bool Project::isProjectLoaded(){
@@ -62,8 +62,8 @@ bool Project::HasMeshGenerated(){
     return isMeshGenerated;
 }
 
-Object& Project::GetMeshRenderObject(){
-    return *MeshRenderObject;
+std::unique_ptr<Object>& Project::GetMeshRenderObject(){
+    return MeshRenderObject;
 }
 
 LayerMapper& Project::GetLayerMapper(){

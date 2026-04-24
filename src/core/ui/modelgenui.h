@@ -1,9 +1,10 @@
 
 #pragma once
-#include "../../modules/gcode/gcode.h"
-#include "../../modules/modelgen/layermapper.h"
-#include "rootui.h"
 #include <vector>
+#include <imgui.h>
+
+#include "ui.h"
+
 
 class ModelGenUI: public UI{
     float nozzleDiameter = 0.46f;

@@ -74,16 +74,16 @@ void Renderer::SetViewProjection(const glm::mat4& vp) {
     viewProj = vp;
 }
 
-void Renderer::DrawObject(class Object& obj, GLuint shaderProgram, bool wireframe, bool depthMask) {
+void Renderer::DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgram, bool wireframe, bool depthMask) {
     glUseProgram(shaderProgram);
 
     // Calculate MVP: Perspective * View * Model
-    glm::mat4 model = obj.GetModelMatrix();
+    glm::mat4 model = obj->GetModelMatrix();
     model = glm::scale(model, globalScale);
     glm::mat4 mvp = viewProj * model; 
 
-    if(obj.drawMode == GL_LINES) {
-        glLineWidth(obj.lineWidth);
+    if(obj->drawMode == GL_LINES) {
+        glLineWidth(obj->lineWidth);
     }
 
     // Send to the uniform you defined in your vertex shader
@@ -92,16 +92,16 @@ void Renderer::DrawObject(class Object& obj, GLuint shaderProgram, bool wirefram
 
     // Send Color
     GLint colorLoc = glGetUniformLocation(shaderProgram, "u_Color");
-    glUniform4fv(colorLoc, 1, glm::value_ptr(obj.color));
+    glUniform4fv(colorLoc, 1, glm::value_ptr(obj->color));
 
-    glBindVertexArray(obj.VAO);
+    glBindVertexArray(obj->VAO);
 
-    if(obj.useIndices)
-        glDrawElements(obj.drawMode, obj.vertexCount, GL_UNSIGNED_INT, 0);
+    if(obj->useIndices)
+        glDrawElements(obj->drawMode, obj->vertexCount, GL_UNSIGNED_INT, 0);
     else
-        glDrawArrays(obj.drawMode, 0, obj.vertexCount);
+        glDrawArrays(obj->drawMode, 0, obj->vertexCount);
 
-    if(wireframe && obj.drawMode == GL_TRIANGLES) {
+    if(wireframe && obj->drawMode == GL_TRIANGLES) {
         glEnable(GL_POLYGON_OFFSET_LINE);
         glPolygonOffset(-1.0f, -1.0f); // Pull wireframe closer to camera
 
@@ -110,10 +110,10 @@ void Renderer::DrawObject(class Object& obj, GLuint shaderProgram, bool wirefram
         glm::vec4 wireColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); 
         glUniform4fv(colorLoc, 1, glm::value_ptr(wireColor));
 
-        if(obj.useIndices)
-            glDrawElements(obj.drawMode, obj.vertexCount, GL_UNSIGNED_INT, 0);
+        if(obj->useIndices)
+            glDrawElements(obj->drawMode, obj->vertexCount, GL_UNSIGNED_INT, 0);
         else
-            glDrawArrays(obj.drawMode, 0, obj.vertexCount);
+            glDrawArrays(obj->drawMode, 0, obj->vertexCount);
             
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

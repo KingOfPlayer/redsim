@@ -1,9 +1,9 @@
 #pragma once
-
 #include <imgui.h>
-#include "rootui.h"
-#include "../../modules/file/file.h"
-#include "../../modules/gcode/gcode.h"
+
+#include "ui.h"
+
+class Project;
 
 class GCodeTools : public UI {
     static void LoadFileAndSaveExtractedPathAsObject();

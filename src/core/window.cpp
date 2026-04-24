@@ -1,5 +1,7 @@
 #include "window.h"
 
+#include "../modules/project/project.h"
+
 #include "ui/rootui.h"
 #include "ui/gcodetoolsui.h"
 #include "ui/viewport.h"

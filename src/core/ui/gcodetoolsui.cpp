@@ -1,5 +1,9 @@
 #include "gcodetoolsui.h"
 
+#include "../../modules/project/project.h"
+#include "../../modules/file/file.h"
+#include "../../modules/gcode/gcode.h"
+
 void GCodeTools::LoadFileAndSaveExtractedPathAsObject(){
     FilePath file = FileModule::SelectFile();
     if (file.path == nullptr) {

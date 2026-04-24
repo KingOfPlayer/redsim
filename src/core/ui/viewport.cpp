@@ -1,5 +1,12 @@
 #include "viewport.h"
 
+#include "../renderer/object.h"
+#include "../renderer/camera.h"
+#include "../renderer/renderer.h"
+#include "../renderer/shader.h"
+
+#include "../../modules/project/project.h"
+
 const char* vertexShaderSource = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
@@ -55,7 +62,7 @@ Object CreateGrid(int size, float size_cell, glm::vec4 color) {
 
 
 Viewport::Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
-    camera = new Camera(
+    camera = std::make_unique<Camera>(
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         90.0f,
@@ -63,8 +70,8 @@ Viewport::Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
         4.0f,
         0.5f
     );
-    renderer = new Renderer(800, 600);
-    grid = CreateGrid(10, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f));
+    renderer = std::make_unique<Renderer>(800, 600);
+    grid = std::make_unique<Object>(CreateGrid(10, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f)));
     shaderProgram = Shader::RegisterShaderProgram(vertexShaderSource, fragmentShaderSource);
 }
 
@@ -116,12 +123,12 @@ void Viewport::render() {
 
     if(project != nullptr){
         if(project->HasGCodeRenderObject() != false){
-            Object gcodeObj = project->GetGCodeRenderObject();
+            std::unique_ptr<Object>& gcodeObj = project->GetGCodeRenderObject();
             renderer->DrawObject(gcodeObj, shaderProgram);
         }
 
         if(project->HasMeshGenerated() != false){
-            Object meshObj = project->GetMeshRenderObject();
+            std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
             renderer->DrawObject(meshObj, shaderProgram, true);
         }
     }
