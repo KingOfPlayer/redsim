@@ -21,5 +21,7 @@ public:
     glm::mat4 GetViewMatrix(float aspectRatio);
 
     glm::vec3 GetPosition() const { return position; }
+    glm::quat GetRotation();
     glm::vec3 GetTarget() const { return target; }
+
 };

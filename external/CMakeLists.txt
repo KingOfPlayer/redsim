@@ -4,6 +4,7 @@ include(FetchContent)
 set(EXTERNAL_LIBS
     glfw
     imgui
+    ImViewGuizmo
 #    glm
 )
 
@@ -11,10 +12,12 @@ set(EXTERNAL_LIBS
 set(glfw_URL "https://github.com/glfw/glfw.git")
 set(glm_URL "https://github.com/g-truc/glm.git")
 set(imgui_URL "https://github.com/ocornut/imgui.git")
+set(ImViewGuizmo_URL "https://github.com/Ka1serM/ImViewGuizmo.git")
 
 set(glfw_tag "162896e5b9a40dc382c5c438cd12c90a5ff86ddd")
 set(glm_tag "a583c59e1616a628b18195869767ea4d6faca5f4")
 set(imgui_tag "772cbfd0146350d05702b923354aa677c9c5a4ef")
+set(ImViewGuizmo_tag "d4e0130c18f631e2fb66e933f820f6d68ad57d78")
 
 foreach(lib ${EXTERNAL_LIBS})
     # dynamically get URL variable
@@ -60,6 +63,12 @@ foreach(lib ${EXTERNAL_LIBS})
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/glm)
 
         target_link_libraries(redsim PRIVATE glm::glm)
+    endif()
+
+    if(${lib} STREQUAL "ImViewGuizmo")
+        add_library(ImViewGuizmo INTERFACE)
+        
+        target_include_directories(ImViewGuizmo INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/ImViewGuizmo)
     endif()
 
     message(CHECK_PASS "Fetched")

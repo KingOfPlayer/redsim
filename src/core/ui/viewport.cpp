@@ -1,5 +1,8 @@
 #include "viewport.h"
 
+#define IMVIEWGUIZMO_IMPLEMENTATION
+#include "ImViewGuizmo.h"
+
 #include "../renderer/object.h"
 #include "../renderer/camera.h"
 #include "../renderer/renderer.h"
@@ -73,6 +76,16 @@ Viewport::Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
     renderer = std::make_unique<Renderer>(800, 600);
     grid = std::make_unique<Object>(CreateGrid(10, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f)));
     shaderProgram = Shader::RegisterShaderProgram(vertexShaderSource, fragmentShaderSource);
+
+    // ImViewGuizmo style configuration
+    auto& style = ImViewGuizmo::GetStyle();
+    style.scale = 0.75f;
+    style.axisLabels[1] = "Z";
+    style.axisLabels[2] = "Y";
+    style.axisColors[1] = IM_COL32(51, 128, 255, 255);
+    style.axisColors[2] = IM_COL32(51, 230, 51, 255);
+    style.animateSnap = false;
+    style.snapAnimationDuration = 0.75f;
 }
 
 void Viewport::render() {
@@ -82,43 +95,22 @@ void Viewport::render() {
     ImGui::Begin("Viewport");
 
     ImVec2 size = ImGui::GetContentRegionAvail();
+    ImVec2 pos  = ImGui::GetWindowPos();
+
+
+    ImVec2 contentMin    = ImGui::GetWindowContentRegionMin();
+    ImVec2 contentMax    = ImGui::GetWindowContentRegionMax();
+    
+    ImVec2 contentStart  = ImVec2(pos.x + contentMin.x, pos.y + contentMin.y);
+    ImVec2 contentSize   = ImVec2(contentMax.x - contentMin.x, contentMax.y - contentMin.y);
     
     bool isHovered = ImGui::IsItemHovered(); 
     ImGuiIO& io = ImGui::GetIO();
 
-    // --- CAMERA MOVEMENT SECTION ---
-    bool cameraUpdated = false;
-    if (ImGui::IsWindowHovered()) {
-        // Pan
-        if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
-            camera->Pan(-io.MouseDelta.x, io.MouseDelta.y);
-            cameraUpdated = true;
-        } else
-        // Orbit
-        if (ImGui::IsMouseDragging(ImGuiMouseButton_Right)) {
-            camera->Orbit(io.MouseDelta.x, io.MouseDelta.y);
-            cameraUpdated = true;
-        }
-        if(ImGui::GetIO().MouseWheel != 0.0f) {
-            camera->Zoom(io.MouseWheel);
-            cameraUpdated = true;
-        }
-    }
-    
-    // Debug
-    if (cameraUpdated) {
-        glm::vec3 cameraPos = camera->GetPosition();
-        glm::vec3 cameraTarget = camera->GetTarget();
-        printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
-        printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
-    }
-
+    // Wiewport rendering
     renderer->SetViewProjection(camera->GetViewMatrix(size.x / size.y));
-
     renderer->Resize(size.x, size.y);
-
     renderer->DrawBegin();
-
     renderer->DrawObject(grid, shaderProgram);
 
     if(project != nullptr){
@@ -138,5 +130,50 @@ void Viewport::render() {
         ImVec2(1, 0),  // top-left corner of the texture
         ImVec2(0, 1)   // bottom-right corner of the texture
     );
+
+    // --- CAMERA MOVEMENT SECTION ---
+    bool cameraUpdated = false;
+    if (ImGui::IsWindowHovered() && !ImViewGuizmo::IsOver()) {
+        // Pan
+        if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+            camera->Pan(-io.MouseDelta.x, io.MouseDelta.y);
+            cameraUpdated = true;
+        } else
+        // Orbit
+        if (ImGui::IsMouseDragging(ImGuiMouseButton_Right)) {
+            camera->Orbit(io.MouseDelta.x, io.MouseDelta.y);
+            cameraUpdated = true;
+        }
+        if(ImGui::GetIO().MouseWheel != 0.0f) {
+            camera->Zoom(io.MouseWheel);
+            cameraUpdated = true;
+        }
+    }
+
+    // Debug
+    /*if (cameraUpdated) {
+        glm::vec3 cameraPos = camera->GetPosition();
+        glm::vec3 cameraTarget = camera->GetTarget();
+        printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
+        printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
+    }*/
+
+    // ImViewGuizmo
+    float padding   = 30.f;
+    float gizmoSize = 128.f / 2 * 0.75f;
+
+    ImVec2 gizmoPos = ImVec2(
+        contentStart.x + padding + gizmoSize,
+        contentStart.y + contentSize.y - gizmoSize - padding
+    );
+
+    glm::vec3 cameraPos = camera->GetPosition();
+    glm::quat cameraRot = camera->GetRotation();
+    glm::vec3 cameraTarget = camera->GetTarget();
+    ImViewGuizmo::BeginFrame();
+
+    ImViewGuizmo::Rotate(cameraPos, cameraRot,cameraTarget, gizmoPos);
+
     ImGui::End();
+
 }

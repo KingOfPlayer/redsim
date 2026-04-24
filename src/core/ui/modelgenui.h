@@ -6,7 +6,7 @@
 #include "ui.h"
 
 
-class ModelGenUI: public UI{
+class ModelGenUI : public UI{
     float nozzleDiameter = 0.46f;
     int qualityIndex = 0;
     bool nef_based = false;

@@ -46,4 +46,4 @@ target_include_directories(redsim PRIVATE
     #${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
-target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui glm::glm X11 CGAL::CGAL)
+target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui ImViewGuizmo glm::glm X11 CGAL::CGAL)
