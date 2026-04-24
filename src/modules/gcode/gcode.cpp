@@ -1,6 +1,7 @@
 
 #include "gcode.h"
-#include <algorithm>
+#include "../file/file.h"
+#include "../../core/renderer/object.h"
 
 void GCodeModule::OpenFile(FilePath *filepath)
 {
@@ -11,7 +12,7 @@ void GCodeModule::OpenFile(FilePath *filepath)
         return;
     }
 
-    currentFile = new FilePath();
+    currentFile = std::make_unique<FilePath>();
     *currentFile = *filepath;
     
     while (!feof(file))

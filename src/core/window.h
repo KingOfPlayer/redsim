@@ -1,11 +1,13 @@
 #pragma once
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <thread>
-#include "ui/rootui.h"
-#include "ui/gcodetoolsui.h"
-#include "ui/viewport.h"
-#include "ui/rootuictx.h"
+#include <cstdio>
+#include <cstring>
+
+class Project;
+class RootUICtx;
+class RootUI;
+struct GLFWwindow;
 
 class Window{
 GLFWwindow* window;

@@ -31,6 +31,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "../../core/renderer/object.h"
+
 #include "../gcode/gcode.h"
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel K;

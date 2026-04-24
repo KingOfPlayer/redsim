@@ -1,15 +1,20 @@
-#include "../gcode/gcode.h"
-#include "../modelgen/layermapper.h"
+#pragma once
+#include <memory>
+
+class GCodeModule;
+class LayerMapper;
+struct FilePath;
+class Object;
 
 class Project {
-    GCodeModule gcodeModule;
+    std::unique_ptr<GCodeModule> gcodeModule;
     bool isGCodeFileLoaded = false;
     bool isGCodeRenderObjectGenerated = false;
-    Object GCodeRenderObject;
+    std::unique_ptr<Object> GCodeRenderObject;
 
-    LayerMapper layerMapper;
+    std::unique_ptr<LayerMapper> layerMapper;
     bool isMeshGenerated = false;
-    Object MeshRenderObject;
+    std::unique_ptr<Object> MeshRenderObject;
 public:
     Project();
     ~Project();
@@ -19,11 +24,11 @@ public:
     FilePath* GetCurrentGCodeFilePath();
     void GenerateRenderObjectFromGCode();
     bool HasGCodeRenderObject();
-    Object GetGCodeRenderObject();
+    Object& GetGCodeRenderObject();
 
     void ExtractLayers();
     void Generate3DMeshFromLayers();
     bool HasMeshGenerated();
-    Object GetMeshRenderObject();
+    Object& GetMeshRenderObject();
     LayerMapper& GetLayerMapper();
 };

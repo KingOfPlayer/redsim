@@ -1,5 +1,10 @@
 #include "window.h"
 
+#include "ui/rootui.h"
+#include "ui/gcodetoolsui.h"
+#include "ui/viewport.h"
+#include "ui/rootuictx.h"
+
 Window::Window(int width, int height, const char* title){
     if (!glfwInit()) {
         window = nullptr;

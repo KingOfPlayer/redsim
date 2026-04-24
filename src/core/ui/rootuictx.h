@@ -1,5 +1,5 @@
-#include "../../modules/project/project.h"
 #pragma once
+#include "../../modules/project/project.h"
 
 class RootUICtx {
     Project* project;

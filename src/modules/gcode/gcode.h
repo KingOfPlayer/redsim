@@ -1,17 +1,14 @@
-
 #pragma once
 #include <cstdio>
-#include <vector>
 #include <unordered_map>
 #include <map>
 #include <string>
 #include <vector>
-#include "../file/file.h"
-#include "../../core/renderer/object.h"
+#include <algorithm>
+#include <memory>
 
 #define READER_BUFFER_SIZE 256
 #define PROGRAM_BUFFER_SIZE 128
-
 
 struct GCodePoint {
     float x;
@@ -111,12 +108,15 @@ struct GCodeLayer{
     std::vector<GCodePath> paths;
 };
 
+class Object;
+struct FilePath;
+
 class GCodeModule{
 public:
     std::vector<GCodePoint> points;
     std::vector<GCodePath> paths;
     GCodeMachineState state;
-    FilePath* currentFile;
+    std::unique_ptr<FilePath> currentFile;
 
     std::vector<GCodeProgramCommand> programCommands;
     void OpenFile(FilePath* filepath);

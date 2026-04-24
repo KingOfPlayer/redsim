@@ -48,7 +48,7 @@ foreach(lib ${EXTERNAL_LIBS})
             ${CMAKE_CURRENT_SOURCE_DIR}/${lib}/backends/imgui_impl_opengl3.cpp
         )
 
-        target_include_directories(imgui PUBLIC
+        target_include_directories(imgui SYSTEM PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/${lib}
             ${CMAKE_CURRENT_SOURCE_DIR}/${lib}/backends
         )

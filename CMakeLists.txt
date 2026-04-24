@@ -29,6 +29,16 @@ add_executable(redsim
     ${SOURCES}
 )
 
+target_precompile_headers(redsim PRIVATE
+    <string>
+    <vector>
+    <thread>
+    <memory>
+    <iostream>
+    <algorithm>
+    <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+)
+
 target_include_directories(redsim PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 #    ${CMAKE_CURRENT_BINARY_DIR}/generated
