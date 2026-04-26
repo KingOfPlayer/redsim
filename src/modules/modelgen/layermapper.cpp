@@ -47,7 +47,7 @@ Polygon_2 LayerMapper::place_nozzle_at(Polygon_2 nozzle, Point_2 vertex) {
     return translated_nozzle;
 }
 
-std::list<Polygon_with_holes_2> LayerMapper::GenerateLayerFromPaths(std::vector<GCodePoint> points, std::vector<GCodePath> paths)
+std::vector<Polygon_with_holes_2> LayerMapper::GCodePathsToPolygons(std::vector<GCodePoint> points, std::vector<GCodePath> paths)
 {
     double thickness = nozzle.diameter;
     double half_w = thickness / 2.0;
@@ -108,7 +108,7 @@ std::list<Polygon_with_holes_2> LayerMapper::GenerateLayerFromPaths(std::vector<
     merger.join(polygons.begin(), polygons.end());
 
     
-    std::list<Polygon_with_holes_2> final_output;
+    std::vector<Polygon_with_holes_2> final_output;
     merger.polygons_with_holes(std::back_inserter(final_output));
     
     // Print details of merger
@@ -120,7 +120,7 @@ std::list<Polygon_with_holes_2> LayerMapper::GenerateLayerFromPaths(std::vector<
     return final_output;
 }
 
-Mesh LayerMapper::Extrude2DLayerTo3D(std::list<Polygon_with_holes_2> layer, float layer_height)
+Mesh LayerMapper::PolygonsLayerToMesh(std::vector<Polygon_with_holes_2>& layer, float layer_height)
 {
     
     Mesh flat_mesh;
@@ -178,7 +178,7 @@ Mesh LayerMapper::MergeTwoMesh(Mesh m1, Mesh m2) {
     return result;
 }
 
-Mesh LayerMapper::UnionMergeLayersToModel(std::vector<Mesh> layers)
+Mesh LayerMapper::MergeLayersToModel(std::vector<Mesh> layers)
 {
     if (layers.empty()) return Mesh();
 
@@ -204,7 +204,7 @@ Mesh LayerMapper::UnionMergeLayersToModel(std::vector<Mesh> layers)
     return std::move(meshes.front());
 }
 
-Mesh LayerMapper::RemeshModel(Mesh model, float target_edge_length)
+Mesh LayerMapper::RemeshModel(Mesh model)
 {
     if(!CGAL::is_triangle_mesh(model)) {
         CGAL::Polygon_mesh_processing::triangulate_faces(model);
@@ -215,19 +215,20 @@ Mesh LayerMapper::RemeshModel(Mesh model, float target_edge_length)
 
     CGAL::Polygon_mesh_processing::isotropic_remeshing(
         model.faces(),
-        target_edge_length,
+        remesh_target_length,
         model,
         CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(eif)
         .number_of_iterations(1)
     );
 
-    printf("Remeshed model to target edge length %.4f (placeholder).\n", target_edge_length);
+    printf("Remeshed model to target edge length %.4f (placeholder).\n", remesh_target_length);
 
     return model;
 }
 
 Object LayerMapper::MeshToRenderObject(const Mesh mesh)
 {
+    
     Object obj;
     obj.drawMode = GL_TRIANGLES;
     obj.useIndices = true;
@@ -323,7 +324,7 @@ Mesh LayerMapper::NefToMesh(const Nef_polyhedron& nef) {
     return m;
 }
 
-Mesh LayerMapper::NefMergeLayersToModel(std::vector<Mesh> layers)
+Mesh LayerMapper::MergeLayersToModelWithNef(std::vector<Mesh> layers)
 {
     Nef_polyhedron merge_nef;
     int completed = 0;
@@ -336,7 +337,6 @@ Mesh LayerMapper::NefMergeLayersToModel(std::vector<Mesh> layers)
             merge_nef = layer_nef;
         } else {
             merge_nef += layer_nef;
-            merge_nef.regularization(); 
         }
     }
     merge_nef.regularization(); 
@@ -344,36 +344,22 @@ Mesh LayerMapper::NefMergeLayersToModel(std::vector<Mesh> layers)
     return final_result;
 }
 
-
-Object LayerMapper::CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
+Mesh LayerMapper::GenerateMesh(std::vector<GCodeLayer> layers)
 {
-    time_t start_time = time(nullptr); 
 
+    time_t start_time = time(nullptr);
     std::vector<Mesh> layer_meshes(layers.size());
-    std::vector<size_t> indices(layers.size());
-    std::iota(indices.begin(), indices.end(), 0);
-    std::mutex print_mutex;
 
-    std::for_each(std::execution::par, indices.begin(), indices.end(),
-        [&](size_t i) {
-            const auto& layer = layers[i];
+    std::for_each(std::execution::par, layers.begin(), layers.end(),
+        [&](const GCodeLayer& layer) {
+            std::vector<Polygon_with_holes_2> layer_polygons =
+                GCodePathsToPolygons(layer.points, layer.paths);
 
-            std::list<Polygon_with_holes_2> layer_polygons =
-                GenerateLayerFromPaths(layer.points, layer.paths);
+            Mesh layer_mesh = PolygonsLayerToMesh(layer_polygons, layer.layerHeight);
+            LayerMapper::ShiftLayerMesh(layer_mesh, layer.layer, layer.layerHeight);
 
-            Mesh layer_mesh = Extrude2DLayerTo3D(layer_polygons, layer.layerHeight);
-            ShiftLayer(layer_mesh, layer.layer, layer.layerHeight);
-
-            layer_meshes[i] = std::move(layer_mesh);
-
-            {
-                std::lock_guard<std::mutex> lock(print_mutex);
-                printf("Processed layer at Z=%.2f with %lu paths into mesh with %u vertices and %u faces.\n",
-                    layer.layer,
-                    layer.paths.size(),
-                    layer_meshes[i].number_of_vertices(),
-                    layer_meshes[i].number_of_faces());
-            }
+            size_t index = &layer - &layers[0];
+            layer_meshes[index] = std::move(layer_mesh);
         }
     );
 
@@ -381,31 +367,30 @@ Object LayerMapper::CreateRenderObjectFromMesh(std::vector<GCodeLayer> layers)
     double elapsed = difftime(end_time, start_time);
     printf("Layer generation and extrusion completed in %.2f seconds.\n", elapsed);
 
+
     start_time = time(nullptr);
     Mesh final_model;
     if(Nef_based) {
-        final_model = NefMergeLayersToModel(layer_meshes);
+        final_model = MergeLayersToModelWithNef(layer_meshes);
     }else{
-        final_model = UnionMergeLayersToModel(layer_meshes);
+        final_model = MergeLayersToModel(layer_meshes);
     }
     end_time = time(nullptr);
     elapsed = difftime(end_time, start_time);
     printf("Model merging completed in %.2f seconds.\n", elapsed);
 
-
-
     if(remesh_after_layers){
         start_time = time(nullptr);
-        final_model = RemeshModel(final_model, 0.1f);
+        final_model = RemeshModel(final_model);
         end_time = time(nullptr);
         elapsed = difftime(end_time, start_time);
         printf("Remeshing final model completed in %.2f seconds.\n", elapsed);
     }
-    Object MeshRenderObject = MeshToRenderObject(final_model);
-    return MeshRenderObject;
+
+    return final_model;
 }
 
-void LayerMapper::ShiftLayer(Mesh& extruded_layer, float layer_offset, float layer_height) {
+void LayerMapper::ShiftLayerMesh(Mesh& extruded_layer, float layer_offset, float layer_height) {
     double z_offset = layer_offset + layer_height;
     printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
     

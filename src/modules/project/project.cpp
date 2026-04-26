@@ -47,12 +47,16 @@ void Project::ExtractLayers(){
     printf("Extracted %zu layers from GCode.\n", layers.size());
 }
 
-void Project::Generate3DMeshFromLayers(){
+void Project::GenerateShellMesh(){
     std::vector<GCodeLayer> layers = gcodeModule->ExtractLayers();
     
     //layerMapper.CreateRenderObjectFromMesh(layers);
 
-    MeshRenderObject = std::make_unique<Object>(layerMapper->CreateRenderObjectFromMesh(layers));
+    MeshRenderObject = std::make_unique<Object>(
+        layerMapper->MeshToRenderObject(
+            layerMapper->GenerateMesh(layers)
+        )
+    );
     isMeshGenerated = true;
 
     printf("Generated 3D Mesh from Layers.\n");

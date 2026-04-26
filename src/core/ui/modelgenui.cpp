@@ -13,7 +13,6 @@ void ModelGenUI::render() {
 
     if(project->isProjectLoaded()){
         if(ImGui::Button("Generate 3D Model from Layers")){
-            printf("Generating 3D Model from Layers...\n");
             LayerMapper& layerMapper = project->GetLayerMapper();
             layerMapper.Set2DNozzlePolygon(nozzleDiameter);
             switch (qualityIndex)
@@ -33,7 +32,8 @@ void ModelGenUI::render() {
             }
             layerMapper.Nef_based = nef_based;
             layerMapper.remesh_after_layers = remesh_after_layers;
-            project->Generate3DMeshFromLayers(); 
+            layerMapper.remesh_target_length = remesh_target_length;
+            project->GenerateShellMesh(); 
         }
     } else {
         ImGui::Text("No Project Loaded.");
@@ -47,7 +47,12 @@ void ModelGenUI::render() {
     // Nozzle Quality Selection
     const char* qualityItems[] = { "Low", "Medium", "High" };
     ImGui::Combo("Nozzle Quality", &qualityIndex, qualityItems, IM_ARRAYSIZE(qualityItems));
+    ImGui::Separator();
     ImGui::Checkbox("Remesh After Layer Merging", &remesh_after_layers);
+    if(remesh_after_layers) {
+        ImGui::SliderFloat("Remesh Target Edge Length", &remesh_target_length, 0.1f, 5.0f);
+    }
+    
 
     ImGui::End();
 }
@@ -59,4 +64,5 @@ ModelGenUI::ModelGenUI(RootUICtx* rootUICtx) : UI(rootUICtx) {
     qualityIndex = layerMapper.nozzleQuality;
     nozzleDiameter = layerMapper.nozzle.diameter;
     nef_based = layerMapper.Nef_based;
+    remesh_after_layers = layerMapper.remesh_after_layers;
 }

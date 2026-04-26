@@ -27,7 +27,7 @@ public:
     std::unique_ptr<Object>& GetGCodeRenderObject();
 
     void ExtractLayers();
-    void Generate3DMeshFromLayers();
+    void GenerateShellMesh();
     bool HasMeshGenerated();
     std::unique_ptr<Object>& GetMeshRenderObject();
     LayerMapper& GetLayerMapper();
