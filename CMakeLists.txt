@@ -8,6 +8,8 @@ if(CCACHE_PROGRAM)
     set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 endif()
 
+set(CMAKE_DISABLE_PRECOMPILE_HEADERS OFF)
+
 project(redsim VERSION 0.0.0 LANGUAGES CXX)
 
 add_subdirectory(external)
@@ -29,6 +31,7 @@ add_executable(redsim
     ${SOURCES}
 )
 
+
 target_precompile_headers(redsim PRIVATE
     <string>
     <vector>
@@ -36,30 +39,6 @@ target_precompile_headers(redsim PRIVATE
     <memory>
     <iostream>
     <algorithm>
-    <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-    <CGAL/Polygon_2.h>
-    <CGAL/Polygon_set_2.h>
-    <CGAL/create_straight_skeleton_2.h>
-    <CGAL/create_offset_polygons_2.h>
-    <CGAL/Polygon_mesh_processing/extrude.h>
-    <CGAL/Polygon_mesh_processing/corefinement.h>
-    <CGAL/Boolean_set_operations_2.h>
-    <CGAL/Surface_mesh.h>
-    <CGAL/Triangulation_face_base_with_info_2.h>
-    <CGAL/Polygon_mesh_processing/triangulate_faces.h>
-    <CGAL/Constrained_Delaunay_triangulation_2.h>
-    <CGAL/mark_domain_in_triangulation.h>
-    <CGAL/Polygon_mesh_processing/remesh.h>
-    <CGAL/Polygon_mesh_processing/detect_features.h>
-    <CGAL/Polyhedron_3.h>
-    <CGAL/Nef_polyhedron_3.h>
-    <CGAL/boost/graph/convert_nef_polyhedron_to_polygon_mesh.h>
-    <CGAL/Polyhedral_mesh_domain_with_features_3.h>
-    <CGAL/Mesh_triangulation_3.h>
-    <CGAL/Mesh_complex_3_in_triangulation_3.h>
-    <CGAL/Mesh_criteria_3.h>
-    <CGAL/make_mesh_3.h>
-    <CGAL/tetrahedral_remeshing.h>
 )
 
 target_include_directories(redsim PRIVATE

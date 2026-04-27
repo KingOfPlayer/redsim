@@ -2,12 +2,6 @@
 
 #include <deque>
 #include <future>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "../../core/renderer/object.h"
-
-#include "../gcode/gcode.h"
 
 #include <execution>
 #include <algorithm>
@@ -15,12 +9,65 @@
 #include <vector>
 #include <mutex>
 
-#include "modelgen.h"
+#include <unordered_set>
+
+#include "modelgentypes.h"
+
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_set_2.h>
+#include <CGAL/create_straight_skeleton_2.h>
+#include <CGAL/create_offset_polygons_2.h>
+#include <CGAL/Polygon_mesh_processing/extrude.h>
+#include <CGAL/Polygon_mesh_processing/corefinement.h>
+#include <CGAL/Boolean_set_operations_2.h>
+
+#include <CGAL/Surface_mesh.h>
+
+#include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Polygon_mesh_processing/triangulate_faces.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/mark_domain_in_triangulation.h>
+#include <CGAL/Polygon_mesh_processing/remesh.h>
+#include <CGAL/Polygon_mesh_processing/detect_features.h>
+
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/boost/graph/convert_nef_polyhedron_to_polygon_mesh.h>
+
+//#include <CGAL/property_map.h>
+#include <boost/property_map/property_map.hpp>
+
+typedef K::Aff_transformation_2 Transformation;
+typedef CGAL::Polygon_2<K> Polygon_2;
+typedef CGAL::Straight_skeleton_2<K> Straight_skeleton_2;
+typedef CGAL::Polygon_with_holes_2<K> Polygon_with_holes_2;
+typedef CGAL::Polygon_set_2<K> Polygon_set_2;
+typedef CGAL::Polyhedron_3<K> Polyhedron;
+typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
+
+struct FaceInfo2
+{
+};
+
+typedef CGAL::Triangulation_vertex_base_2<K> Vb;
+typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo2, K> Fb;
+typedef CGAL::Constrained_triangulation_face_base_2<K, Fb> CFb;
+typedef CGAL::Triangulation_data_structure_2<Vb, CFb> TDS;
+typedef CGAL::Exact_intersections_tag Itag;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag> CDT;
+
+typedef CDT::Face_handle Face_handle;
+typedef boost::property_map<Mesh, CGAL::edge_is_feature_t>::type EIFMap;
+
 
 struct Nozzle2D {
     Polygon_2 polygon;
     float diameter;
 };
+
+struct GCodePoint;
+struct GCodePath;
+struct GCodeLayer;
 
 class LayerMapper
 {
@@ -57,5 +104,4 @@ public:
     Mesh RemeshModel(Mesh model);
 
     Mesh GenerateMesh(std::vector<GCodeLayer> layers);
-    Object MeshToRenderObject(const Mesh mesh);
 };
