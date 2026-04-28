@@ -7,6 +7,7 @@
 #include "../renderer/camera.h"
 #include "../renderer/renderer.h"
 #include "../renderer/shader.h"
+#include "../renderer/vertextool.h"
 
 #include "../../modules/project/project.h"
 
@@ -45,6 +46,7 @@ Object CreateGrid(int size, float size_cell, glm::vec4 color) {
         vertices.push_back((float)-size * size_cell); vertices.push_back(0); vertices.push_back((float)i * size_cell);
         vertices.push_back((float)size * size_cell);  vertices.push_back(0); vertices.push_back((float)i * size_cell);
     }
+    obj.vertices = vertices;
 
     obj.vertexCount = (uint32_t)vertices.size() / 3;
 
@@ -108,7 +110,7 @@ void Viewport::render() {
     ImGuiIO& io = ImGui::GetIO();
 
     // Wiewport rendering
-    renderer->SetViewProjection(camera->GetViewMatrix(size.x / size.y));
+    renderer->SetViewProjection(camera->GetViewProjectMatrix(size.x / size.y));
     renderer->Resize(size.x, size.y);
     renderer->DrawBegin();
     renderer->DrawObject(grid, shaderProgram);
@@ -119,7 +121,7 @@ void Viewport::render() {
             renderer->DrawObject(gcodeObj, shaderProgram);
         }
 
-        if(project->HasMeshGenerated() != false){
+        if(project->HasShellMeshGenerated() != false){
             std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
             renderer->DrawObject(meshObj, shaderProgram, true);
         }
@@ -131,7 +133,44 @@ void Viewport::render() {
         ImVec2(0, 1)   // bottom-right corner of the texture
     );
 
-    // --- CAMERA MOVEMENT SECTION ---
+
+    // Vertex selection
+    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && !ImViewGuizmo::IsOver()) {
+        ImGui::GetWindowDrawList()->AddRect(io.MouseClickedPos[0], io.MousePos, IM_COL32(41, 74, 122, 255));
+        ImGui::GetWindowDrawList()->AddRectFilled(io.MouseClickedPos[0], io.MousePos, IM_COL32(41, 74, 122, 50));
+    }
+
+    if(ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImViewGuizmo::IsOver()) {
+
+        float dragDist = glm::length(glm::vec2(io.MouseDragMaxDistanceAbs[0].x, io.MouseDragMaxDistanceAbs[0].y));
+        if(dragDist > 5.0f) {
+
+            ImVec2 rawStart = io.MouseClickedPos[ImGuiMouseButton_Left];
+            ImVec2 rawEnd = io.MousePos;
+
+            float x1 = (std::min(rawStart.x, rawEnd.x) - contentStart.x)/contentSize.x;
+            float y1 = (std::min(rawStart.y, rawEnd.y) - contentStart.y)/contentSize.y;
+            float x2 = (std::max(rawStart.x, rawEnd.x) - contentStart.x)/contentSize.x;
+            float y2 = (std::max(rawStart.y, rawEnd.y) - contentStart.y)/contentSize.y;
+
+            // clamp
+            x1 = std::max(0.0f, std::min(1.0f, 1-x1));
+            y1 = std::max(0.0f, std::min(1.0f, 1-y1));
+            x2 = std::max(0.0f, std::min(1.0f, 1-x2));
+            y2 = std::max(0.0f, std::min(1.0f, 1-y2));
+
+            printf("Mouse Drag from (%.2f, %.2f) to (%.2f, %.2f)\n", x1, y1, x2, y2);
+
+            if(project != nullptr){
+                if(project->HasShellMeshGenerated() != false){
+                    std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
+                    VertexTool::SelectVertices(meshObj, glm::vec2(x1, y1), glm::vec2(x2, y2), camera->GetProjectionMatrix(size.x / size.y), camera->GetViewMatrix(), camera->GetPosition());
+                }
+            }
+        }
+    }
+
+    // Camera controls
     bool cameraUpdated = false;
     if (ImGui::IsWindowHovered() && !ImViewGuizmo::IsOver()) {
         // Pan
@@ -151,12 +190,28 @@ void Viewport::render() {
     }
 
     // Debug
-    /*if (cameraUpdated) {
+    if (cameraUpdated) {
         glm::vec3 cameraPos = camera->GetPosition();
         glm::vec3 cameraTarget = camera->GetTarget();
         printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
         printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
-    }*/
+        // print view matrix
+        glm::mat4 view = camera->GetViewMatrix();
+        printf("View Matrix:\n");
+        for (int i = 0; i < 4; i++) {
+            printf("%.2f %.2f %.2f %.2f\n", view[i][0], view[i][1], view[i][2], view[i][3]);
+        }
+        glm::mat4 proj = camera->GetProjectionMatrix(size.x / size.y);
+        printf("Projection Matrix:\n");
+        for (int i = 0; i < 4; i++) {
+            printf("%.2f %.2f %.2f %.2f\n", proj[i][0], proj[i][1], proj[i][2], proj[i][3]);
+        }
+        glm::mat4 viewProj = camera->GetViewProjectMatrix(size.x / size.y);
+        printf("ViewProjection Matrix:\n");
+        for (int i = 0; i < 4; i++) {
+            printf("%.2f %.2f %.2f %.2f\n", viewProj[i][0], viewProj[i][1], viewProj[i][2], viewProj[i][3]);
+        }
+    }
 
     // ImViewGuizmo
     float padding   = 30.f;

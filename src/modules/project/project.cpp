@@ -70,7 +70,7 @@ void Project::GenerateShellMesh(){
 
 
 
-bool Project::HasMeshGenerated(){
+bool Project::HasShellMeshGenerated(){
     return isMeshGenerated;
 }
 
@@ -84,7 +84,7 @@ LayerMapper& Project::GetLayerMapper(){
 
 
 void Project::GenerateTetrahedralMesh(){
-    if(!HasMeshGenerated()) {
+    if(!HasShellMeshGenerated()) {
         printf("No shell mesh generated yet. Cannot generate tetrahedral mesh.\n");
         return;
     }

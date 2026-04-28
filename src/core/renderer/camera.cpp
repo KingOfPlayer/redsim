@@ -1,4 +1,5 @@
 #include "camera.h"
+#include "renderconst.h"
 
 Camera::Camera(glm::vec3 position, glm::vec3 target, float yaw, float pitch, float distance, float sensitivity)
 {
@@ -13,8 +14,8 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, float yaw, float pitch, flo
 void Camera::Zoom(float delta)
 {
     distance -= delta * 0.5f;
-    if (distance < 1.0f)
-        distance = 1.0f;
+    if (distance < 0.1f)
+        distance = 0.1f;
 }
 
 void Camera::Pan(float deltaX, float deltaY)
@@ -41,7 +42,7 @@ void Camera::Orbit(float deltaX, float deltaY)
         pitch = -89.0f;
 }
 
-glm::mat4 Camera::GetViewMatrix(float aspectRatio)
+glm::mat4 Camera::GetViewMatrix()
 {
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -51,11 +52,18 @@ glm::mat4 Camera::GetViewMatrix(float aspectRatio)
 
     position = target - direction * distance;
 
-    glm::mat4 view = glm::lookAt(position, target, glm::vec3(0, 1, 0));
-    glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
-    glm::mat4 viewProj = proj * view;
+    glm::mat4 view = glm::lookAt(position , target, glm::vec3(0, 1, 0));
+    return view;
+}
 
-    return viewProj;
+glm::mat4 Camera::GetProjectionMatrix(float aspectRatio)
+{
+    return glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+}
+
+glm::mat4 Camera::GetViewProjectMatrix(float aspectRatio)
+{
+    return GetProjectionMatrix(aspectRatio) * GetViewMatrix();
 }
 
 glm::quat Camera::GetRotation()

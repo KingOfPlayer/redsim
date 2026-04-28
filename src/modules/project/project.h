@@ -41,7 +41,7 @@ public:
 
     void ExtractLayers();
     void GenerateShellMesh();
-    bool HasMeshGenerated();
+    bool HasShellMeshGenerated();
     std::unique_ptr<Object>& GetMeshRenderObject();
     LayerMapper& GetLayerMapper();
 

@@ -18,10 +18,11 @@ public:
     void Orbit(float deltaX, float deltaY);
     void Pan(float deltaX, float deltaY);
 
-    glm::mat4 GetViewMatrix(float aspectRatio);
+    glm::mat4 GetViewMatrix();
+    glm::mat4 GetProjectionMatrix(float aspectRatio);
+    glm::mat4 GetViewProjectMatrix(float aspectRatio);
 
     glm::vec3 GetPosition() const { return position; }
     glm::quat GetRotation();
     glm::vec3 GetTarget() const { return target; }
-
 };

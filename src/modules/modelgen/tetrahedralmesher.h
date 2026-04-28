@@ -30,12 +30,12 @@ struct TetrahedralMesherResult
 };
 
 class TetrahedralMesher {
-	double cell_size = 1.0;
-	double cell_radius_edge = 2.0;
-	double facet_angle = 25.0;
-	double facet_size = 1.0;
-	double facet_distance = 0.1;
-	int remesh_iterations = 5;
+	double cell_size        = 2.0;
+	double cell_radius_edge = 3.0;
+	double facet_angle      = 20.0;
+	double facet_size       = 2.0;
+	double facet_distance   = 0.5;
+	int    remesh_iterations = 1;  
 public:
 	TetrahedralMesherResult MeshToTetrahedral(const Mesh& input_mesh);
 	Triangulation_3 GenerateTetrahedralModel(const Mesh& input_mesh);

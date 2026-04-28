@@ -326,6 +326,7 @@ Object GCodeModule::ConvertPathToRenderObject() {
         vertices.push_back(p.y - center.y);
         vertices.push_back(p.z - center.z);
     }
+    obj.vertices = vertices;
 
     /*std::vector<float> vertices;
     for (const auto& p : points) {
@@ -340,6 +341,7 @@ Object GCodeModule::ConvertPathToRenderObject() {
         indices.push_back((unsigned int)path.start - 1);
         indices.push_back((unsigned int)path.end - 1);
     }
+    obj.indices = indices;
     obj.vertexCount = (uint32_t)indices.size();
 
     glGenVertexArrays(1, &obj.VAO);

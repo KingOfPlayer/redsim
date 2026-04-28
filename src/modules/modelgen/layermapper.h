@@ -34,6 +34,11 @@
 #include <CGAL/Nef_polyhedron_3.h>
 #include <CGAL/boost/graph/convert_nef_polyhedron_to_polygon_mesh.h>
 
+// extra 
+#include <CGAL/Polygon_mesh_processing/merge_border_vertices.h>
+#include <CGAL/Polygon_mesh_processing/stitch_borders.h>
+#include <CGAL/Polygon_mesh_processing/repair.h>
+
 //#include <CGAL/property_map.h>
 #include <boost/property_map/property_map.hpp>
 
@@ -83,7 +88,7 @@ public:
     Nozzle2D nozzle;
     bool Nef_based = false;
     bool remesh_after_layers = false;
-    float remesh_target_length = 0.1f;
+    float remesh_target_length = 1.1f;
 
     // Merge
     static Mesh MergeLayersToModel(std::vector<Mesh> layers);

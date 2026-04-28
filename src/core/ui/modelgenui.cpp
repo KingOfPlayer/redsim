@@ -11,7 +11,8 @@ void ModelGenUI::render() {
     RootUICtx* ctx = GetRootUIContext();
     Project* project = ctx->getProject();
 
-    if(project->isProjectLoaded()){
+    bool projectLoaded = project->isProjectLoaded();
+    if(projectLoaded) {
         if(ImGui::Button("Generate 3D Model from Layers")){
             LayerMapper& layerMapper = project->GetLayerMapper();
             layerMapper.Set2DNozzlePolygon(nozzleDiameter);
@@ -51,6 +52,16 @@ void ModelGenUI::render() {
     ImGui::Checkbox("Remesh After Layer Merging", &remesh_after_layers);
     if(remesh_after_layers) {
         ImGui::SliderFloat("Remesh Target Edge Length", &remesh_target_length, 0.1f, 5.0f);
+    }
+
+    if(project->HasShellMeshGenerated()) {
+        ImGui::Separator();
+        if(ImGui::Button("Generate Tetrahedral Mesh")){
+            project->GenerateTetrahedralMesh();
+        }
+        if(project->HasTetrahedralMeshGenerated() && ImGui::Button("Save Tetrahedral Mesh")){
+            project->SaveTetrahedralMeshToFile();
+        }
     }
     
 

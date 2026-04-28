@@ -1,4 +1,5 @@
 #pragma once
+#include "renderconst.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <cstdio>
@@ -6,7 +7,7 @@
 
 class Renderer {
     glm::mat4 viewProj;
-    glm::vec3 globalScale = glm::vec3(0.1f, 0.1f, 0.1f);
+    glm::vec3 globalScale = glm::vec3(RENDERSCALE, RENDERSCALE, RENDERSCALE);
     int Viewport_Width, Viewport_Height;
 
     GLuint FBO;
