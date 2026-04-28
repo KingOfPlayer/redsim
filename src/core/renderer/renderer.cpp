@@ -62,6 +62,7 @@ void Renderer::DrawBegin() {
     }
     glViewport(0, 0, Viewport_Width, Viewport_Height);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glEnable(GL_MULTISAMPLE);  
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
@@ -124,6 +125,8 @@ void Renderer::DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgr
 }
 
 void Renderer::DrawEnd() {
+
+    glDisable(GL_MULTISAMPLE);  
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Extract errors

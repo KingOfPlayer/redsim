@@ -127,6 +127,14 @@ void Viewport::render() {
         }
     }
 
+    // Draw selected vertices if any
+    if (!VertexTool::selectedVertices.empty()) {
+        Object selectedVerticesObj = VertexTool::CreateSelectedVerticesObject();
+        glPointSize(8.0f);
+        renderer->DrawObject(std::make_unique<Object>(selectedVerticesObj), shaderProgram);
+        glPointSize(1.0f);
+    }
+
     renderer->DrawEnd();
     ImGui::Image((void*)(intptr_t)renderer->getFramebufferTexture(), size,
         ImVec2(1, 0),  // top-left corner of the texture
@@ -140,7 +148,7 @@ void Viewport::render() {
         ImGui::GetWindowDrawList()->AddRectFilled(io.MouseClickedPos[0], io.MousePos, IM_COL32(41, 74, 122, 50));
     }
 
-    if(ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImViewGuizmo::IsOver()) {
+    if(ImGui::IsWindowHovered() &&ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImViewGuizmo::IsOver()) {
 
         float dragDist = glm::length(glm::vec2(io.MouseDragMaxDistanceAbs[0].x, io.MouseDragMaxDistanceAbs[0].y));
         if(dragDist > 5.0f) {
