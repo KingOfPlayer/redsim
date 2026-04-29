@@ -1,0 +1,105 @@
+load "msh3"
+load "medit"
+load "iovtk"
+
+int  nn    = 5;       // cube sub-divisions per axis
+real E     = 210e3;   // Young's modulus [MPa] (steel)
+real nu    = 0.3;     // Poisson's ratio
+real Tload = 1000.0;  // Load
+
+real lambda = E * nu / ((1. + nu) * (1. - 2.*nu)); // (E,v) , lambda
+real mu     = E / (2. * (1. + nu));                // (E,v) , G
+cout << "lambda=" << lambda << "  mu=" << mu << endl;
+
+// cube
+mesh Th2 = square(nn, nn);
+
+real zmin = 0., zmax = 1.;
+int[int] rdown = [0, 1];                    // bottom face -> label 1
+int[int] rup   = [0, 2];                    // top    face -> label 2
+int[int] rmid  = [1, 3, 2, 3, 3, 3, 4, 3]; // lateral sides -> label 3
+
+mesh3 Th = buildlayers(Th2, nn,
+             zbound     = [zmin, zmax],
+             reffacelow = rdown,
+             reffaceup  = rup,
+             reffacemid = rmid
+           );
+
+cout << "Mesh: " << Th.nv << " vertices, " << Th.nt << " tets" << endl;
+
+// Variable for Meshes
+fespace Vh(Th, [P1, P1, P1]);
+fespace Wh(Th,  P1);
+
+Vh [ux, uy, uz];
+Vh [vx, vy, vz];
+
+// Hooke law macro
+macro eps11(u1,u2,u3)  (dx(u1))                    //EOM
+macro eps22(u1,u2,u3)  (dy(u2))                    //EOM
+macro eps33(u1,u2,u3)  (dz(u3))                    //EOM
+macro eps12(u1,u2,u3)  (0.5*(dy(u1)+dx(u2)))       //EOM
+macro eps13(u1,u2,u3)  (0.5*(dz(u1)+dx(u3)))       //EOM
+macro eps23(u1,u2,u3)  (0.5*(dz(u2)+dy(u3)))       //EOM
+macro divU(u1,u2,u3)   (dx(u1)+dy(u2)+dz(u3))      //EOM
+
+// Final law macro https://en.wikipedia.org/wiki/Hooke's_law#:~:text=Derivation%20of%20Hooke's%20law%20in%20three%20dimensions
+macro a(u1,u2,u3,v1,v2,v3) (
+    lambda*divU(u1,u2,u3)*divU(v1,v2,v3)
+  + 2.*mu*(
+      eps11(u1,u2,u3)*eps11(v1,v2,v3)
+    + eps22(u1,u2,u3)*eps22(v1,v2,v3)
+    + eps33(u1,u2,u3)*eps33(v1,v2,v3)
+    + 2.*eps12(u1,u2,u3)*eps12(v1,v2,v3)
+    + 2.*eps13(u1,u2,u3)*eps13(v1,v2,v3)
+    + 2.*eps23(u1,u2,u3)*eps23(v1,v2,v3)
+  )
+)                                                   //EOM
+
+// Problem  (label 1 = bottom/clamped, label 2 = top/pulled)
+// u: real variable
+// v: virtual variable
+problem Elasticity([ux,uy,uz],[vx,vy,vz], solver=CG, eps=1e-8)
+=
+    int3d(Th)( a(ux,uy,uz,vx,vy,vz) ) // Define system matrices
+  - int2d(Th,2)( Tload*vz )          // traction on top
+  + on(1, ux=0., uy=0., uz=0.)       // clamp bottom
+;
+
+// Solve
+cout << "Solving ..." << endl;
+Elasticity;
+cout << "max |uz| = " << uz[].linfty << endl;
+
+// Get total stress
+// Hook law to Von Mises stress 
+// https://en.wikipedia.org/wiki/Hooke's_law#:~:text=Derivation%20of%20Hooke's%20law%20in%20three%20dimensions
+// https://en.wikipedia.org/wiki/Von_Mises_yield_criterion#Multi-axial_(2D_or_3D)_stress
+
+Wh s11, s22, s33, s12, s13, s23, vmises;
+
+s11 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dx(ux);
+s22 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dy(uy);
+s33 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dz(uz);
+s12 = mu*(dy(ux)+dx(uy));
+s13 = mu*(dz(ux)+dx(uz));
+s23 = mu*(dz(uy)+dy(uz));
+
+vmises = sqrt(0.5*(
+    (s11-s22)^2 + (s22-s33)^2 + (s33-s11)^2
+  + 6.*(s12^2+s13^2+s23^2)
+));
+
+cout << "max von Mises = " << vmises[].max << " MPa" << endl;
+
+// Save
+savevtk("displacement.vtu", Th, [ux,uy,uz], dataname="displacement");
+savevtk("vonMises.vtu",      Th, vmises,     dataname="vonMises");
+real coef=100;
+//plot(Th, wait=1, coef=coef);
+//plot(movemesh(Th,[x+ux*coef,y+uy*coef,z+uz*coef]),wait=1);
+cout << "Saved: displacement.vtu  vonMises.vtu" << endl;
+
+medit("uz", Th, uz); 
+medit("vmises", movemesh(Th,[x+ux*coef,y+uy*coef,z+uz*coef]), vmises);
