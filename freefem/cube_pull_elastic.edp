@@ -97,9 +97,9 @@ cout << "max von Mises = " << vmises[].max << " MPa" << endl;
 savevtk("displacement.vtu", Th, [ux,uy,uz], dataname="displacement");
 savevtk("vonMises.vtu",      Th, vmises,     dataname="vonMises");
 real coef=100;
-//plot(Th, wait=1, coef=coef);
-//plot(movemesh(Th,[x+ux*coef,y+uy*coef,z+uz*coef]),wait=1);
+plot(Th, wait=1, coef=coef);
+plot(movemesh(Th,[x+ux*coef,y+uy*coef,z+uz*coef]),wait=1);
 cout << "Saved: displacement.vtu  vonMises.vtu" << endl;
 
-medit("uz", Th, uz); 
-medit("vmises", movemesh(Th,[x+ux*coef,y+uy*coef,z+uz*coef]), vmises);
+//medit("uz", Th, uz); 
+//medit("vmises", movemesh(Th,[x+ux*coef,y+uy*coef,z+uz*coef]), vmises);

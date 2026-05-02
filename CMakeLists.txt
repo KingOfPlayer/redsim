@@ -10,6 +10,8 @@ endif()
 
 set(CMAKE_DISABLE_PRECOMPILE_HEADERS OFF)
 
+add_compile_options(-frounding-math)
+
 project(redsim VERSION 0.0.0 LANGUAGES CXX)
 
 add_subdirectory(external)
@@ -22,6 +24,8 @@ find_package(glm REQUIRED)
 
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 find_package(CGAL REQUIRED)
+
+find_package(TBB REQUIRED)
 
 #configure_file(${CMAKE_SOURCE_DIR}/include/constants.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/constants.h)
 
@@ -48,4 +52,4 @@ target_include_directories(redsim PRIVATE
     #${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
-target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui ImViewGuizmo glm::glm X11 CGAL::CGAL)
+target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui ImViewGuizmo glm::glm X11 CGAL::CGAL TBB::tbb)

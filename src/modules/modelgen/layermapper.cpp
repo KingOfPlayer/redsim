@@ -103,8 +103,10 @@ std::vector<Polygon_with_holes_2> LayerMapper::GCodePathsToPolygons(std::vector<
 
     }
 
+    /*
     printf("Generated %d polygons from paths and nozzles.\n", pi);
     printf("Total polygons count: %lu\n", polygons.size());
+    */
 
     Polygon_set_2 merger;
     merger.join(polygons.begin(), polygons.end());
@@ -114,7 +116,7 @@ std::vector<Polygon_with_holes_2> LayerMapper::GCodePathsToPolygons(std::vector<
     merger.polygons_with_holes(std::back_inserter(final_output));
     
     // Print details of merger
-    printf("Generated layer with %lu polygons.\n", final_output.size());
+    //printf("Generated layer with %lu polygons.\n", final_output.size());
     // for (const auto &pwh : final_output) {
     //     printf(" Polygon with %lu outer vertices and %lu holes.\n", pwh.outer_boundary().size(), std::distance(pwh.holes_begin(), pwh.holes_end()));
     // }
@@ -140,8 +142,6 @@ Mesh LayerMapper::PolygonsLayerToMesh(std::vector<Polygon_with_holes_2>& layer, 
         std::unordered_map<Face_handle, bool> in_domain_map;
         boost::associative_property_map< std::unordered_map<Face_handle,bool> >
             in_domain(in_domain_map);
-    
-    printf("Triangulating layer.\n");
 
     // 3. Mark facets that are inside the domain
     CGAL::mark_domain_in_triangulation(cdt, in_domain);
@@ -165,11 +165,11 @@ Mesh LayerMapper::PolygonsLayerToMesh(std::vector<Polygon_with_holes_2>& layer, 
 
     Mesh extruded_layer;
 
-    CGAL::Polygon_mesh_processing::extrude_mesh(flat_mesh, extruded_layer, K::Vector_3(0, layer_height, 0));
+    CGAL::Polygon_mesh_processing::extrude_mesh(flat_mesh, extruded_layer, K::Vector_3(0, layer_height + LAYER_OVERLAP * 2, 0));
     
-    printf("Extruded layer to 3D mesh with %u vertices and %u faces.\n",
+    /*printf("Extruded layer to 3D mesh with %u vertices and %u faces.\n",
             extruded_layer.number_of_vertices(),
-            extruded_layer.number_of_faces());
+            extruded_layer.number_of_faces());*/
 
     return extruded_layer;
 }
@@ -316,8 +316,8 @@ Mesh LayerMapper::GenerateMesh(std::vector<GCodeLayer> layers)
 }
 
 void LayerMapper::ShiftLayerMesh(Mesh& extruded_layer, float layer_offset, float layer_height) {
-    double z_offset = layer_offset + layer_height;
-    printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
+    double z_offset = layer_offset + layer_height + LAYER_OVERLAP;
+    //printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
     
     CGAL::Aff_transformation_3<K> translation(CGAL::TRANSLATION, K::Vector_3(0, z_offset, 0));
 

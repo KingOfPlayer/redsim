@@ -1,5 +1,7 @@
 #pragma once
 
+#define LAYER_OVERLAP 0.01f
+
 #include <deque>
 #include <future>
 
