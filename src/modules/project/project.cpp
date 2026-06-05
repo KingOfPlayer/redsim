@@ -82,14 +82,13 @@ LayerMapper& Project::GetLayerMapper(){
     return *layerMapper;
 }
 
-
 void Project::GenerateTetrahedralMesh(){
     if(!HasShellMeshGenerated()) {
         printf("No shell mesh generated yet. Cannot generate tetrahedral mesh.\n");
         return;
     }
 
-    TetrahedralMesherResult result = tetrahedralMesher->MeshToTetrahedral(*shellMesh);
+    TetrahedralMesherResult result = tetrahedralMesher->ProcessMeshForTetrahedral(*shellMesh);
     isTetrahedralMeshGenerated = true;
     tetrahedralMeshResult = std::make_unique<TetrahedralMesherResult>(std::move(result));
 }
@@ -118,5 +117,9 @@ void Project::SaveTetrahedralMeshToFile(){
     std::string outputPath = filenameWithoutExt + "_tetrahedral.mesh"; // "test_tetrahedral.mesh"
     std::string outputFilePath = fileDirectory + "/" + outputPath; // ".../.../test_tetrahedral.mesh"
 
-    tetrahedralMesher->SaveTetrahedralMeshToFile(*tetrahedralMeshResult, outputFilePath);
+    tetrahedralMesher->SaveTetrahedralMesherResultToFile(*tetrahedralMeshResult, outputFilePath);
+}
+
+TetrahedralMesher& Project::GetTetrahedralMesher(){
+    return *tetrahedralMesher;
 }

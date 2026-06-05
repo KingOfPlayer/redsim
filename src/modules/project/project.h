@@ -48,5 +48,6 @@ public:
     void GenerateTetrahedralMesh();
     bool HasTetrahedralMeshGenerated();
     void SaveTetrahedralMeshToFile();
+    TetrahedralMesher& GetTetrahedralMesher();
 
 };

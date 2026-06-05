@@ -8,9 +8,11 @@ if(CCACHE_PROGRAM)
     set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 endif()
 
-set(CMAKE_DISABLE_PRECOMPILE_HEADERS OFF)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the build type" FORCE)
+endif()
 
-add_compile_options(-frounding-math)
+message(STATUS "Selected build type: ${CMAKE_BUILD_TYPE}")
 
 project(redsim VERSION 0.0.0 LANGUAGES CXX)
 

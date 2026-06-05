@@ -6,3 +6,6 @@ build
 .vscode
 doc
 test
+freefem/displacement.vtu
+freefem/vonMises.vtu
+todo.md

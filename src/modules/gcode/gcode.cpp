@@ -14,6 +14,8 @@ void GCodeModule::OpenFile(FilePath *filepath)
 
     currentFile = std::make_unique<FilePath>();
     *currentFile = *filepath;
+
+    programCommands.clear();
     
     while (!feof(file))
     {

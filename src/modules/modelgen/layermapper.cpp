@@ -214,17 +214,17 @@ Mesh LayerMapper::RemeshModel(Mesh model)
     }
 
     EIFMap eif = get(CGAL::edge_is_feature, model);
-    CGAL::Polygon_mesh_processing::detect_sharp_edges(model, 45, eif);
+    CGAL::Polygon_mesh_processing::detect_sharp_edges(model, remesh_edge_angle, eif);
 
     CGAL::Polygon_mesh_processing::isotropic_remeshing(
         model.faces(),
         remesh_target_length,
         model,
         CGAL::Polygon_mesh_processing::parameters::edge_is_constrained_map(eif)
-        .number_of_iterations(1)          // more passes = more uniform
+        .number_of_iterations(remesh_iterations)
     );
 
-    printf("Remeshed model to target edge length %.4f (placeholder).\n", remesh_target_length);
+    printf("Remeshed model to target edge length %.4f, angle %.4f\n", remesh_target_length, remesh_edge_angle);
 
     return model;
 }

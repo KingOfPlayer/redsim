@@ -2,7 +2,7 @@
 
 mkdir -p build
 cd build
-cmake .. 
+cmake ..
 
 if [ $? -ne 0 ]; then
     echo "Configuration failed!"

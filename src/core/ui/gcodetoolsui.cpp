@@ -53,10 +53,12 @@ void GCodeTools::render() {
         }
     } else {
         ImGui::Text("No Project Loaded.");
-        if(ImGui::Button("Load GCode File into Project")){
-            std::thread(LoadFileIntoProject, project).detach();
-        }
     }
+
+    if(ImGui::Button("Load GCode File into Project")){
+        std::thread(LoadFileIntoProject, project).detach();
+    }
+
 
     if (ImGui::Button("Load GCode File and Extract Paths as OBJ")) {
         std::thread(LoadFileAndSaveExtractedPathAsObject).detach();

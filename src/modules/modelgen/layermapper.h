@@ -91,6 +91,8 @@ public:
     bool Nef_based = false;
     bool remesh_after_layers = false;
     float remesh_target_length = 1.1f;
+    float remesh_edge_angle = 45.0f;
+    int remesh_iterations = 1;
 
     // Merge
     static Mesh MergeLayersToModel(std::vector<Mesh> layers);

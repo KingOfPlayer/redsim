@@ -25,20 +25,22 @@ using Triangulation_3 = CGAL::Triangulation_3<Tr::Geom_traits, Tr::Triangulation
 
 struct TetrahedralMesherResult
 {
-	Triangulation_3 volume;
+	C3t3 c3t3;
+	//Triangulation_3 volume;
 	//Mesh            surface;
 };
 
 class TetrahedralMesher {
-	double cell_size        = 2.0;
-	double cell_radius_edge = 3.0;
-	double facet_angle      = 20.0;
-	double facet_size       = 2.0;
-	double facet_distance   = 0.5;
-	int    remesh_iterations = 1;  
 public:
-	TetrahedralMesherResult MeshToTetrahedral(const Mesh& input_mesh);
-	Triangulation_3 GenerateTetrahedralModel(const Mesh& input_mesh);
+	double cell_size        = 2.0;
+	double cell_radius_edge = 2.0;
+	double facet_angle      = 25.0;
+	double facet_size       = 2.0;
+	double facet_distance   = 0.05;
+	int    remesh_iterations = 1;  
+	C3t3 MeshToC3t3(const Mesh& input_mesh);
+	Triangulation_3 C3t3ToMesh(C3t3);
+	TetrahedralMesherResult ProcessMeshForTetrahedral(const Mesh& input_mesh);
 	//Mesh TetrahedralToMesh(const Triangulation_3& tr);
-	static void SaveTetrahedralMeshToFile(const TetrahedralMesherResult& result, const std::string& filename);
+	static void SaveTetrahedralMesherResultToFile(const TetrahedralMesherResult& result, const std::string& filename);
 };
