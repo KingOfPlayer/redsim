@@ -142,6 +142,8 @@ Mesh_fast ModelgenHelper::MeshToMeshFast(const Mesh mesh) {
 
     // Mesh repair and cleanup
     CGAL::Polygon_mesh_processing::merge_duplicated_vertices_in_boundary_cycles(output_mesh);
+    CGAL::Polygon_mesh_processing::remove_degenerate_faces(output_mesh);
+    CGAL::Polygon_mesh_processing::remove_degenerate_edges(output_mesh);
     CGAL::Polygon_mesh_processing::stitch_borders(output_mesh);
     CGAL::Polygon_mesh_processing::remove_almost_degenerate_faces(output_mesh);
     CGAL::Polygon_mesh_processing::remove_isolated_vertices(output_mesh);

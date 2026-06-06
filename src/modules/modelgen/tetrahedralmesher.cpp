@@ -25,13 +25,6 @@ C3t3 TetrahedralMesher::MeshToC3t3(
     );
     std::cerr << "volume: " << vol << "\n";
 
-    CGAL::Polygon_mesh_processing::merge_duplicated_vertices_in_boundary_cycles(mesh_fast_copy);
-
-    CGAL::Polygon_mesh_processing::remove_degenerate_faces(mesh_fast_copy);
-    CGAL::Polygon_mesh_processing::remove_degenerate_edges(mesh_fast_copy);
-
-    CGAL::Polygon_mesh_processing::stitch_borders(mesh_fast_copy);
-
     Mesh_domain_fast domain(mesh_fast_copy);
 
     domain.detect_features();
