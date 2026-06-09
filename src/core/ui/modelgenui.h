@@ -7,7 +7,7 @@
 
 
 class ModelGenUI : public UI{
-    float nozzleDiameter = 0.46f;
+    float nozzleDiameter = 0.60f;
     int qualityIndex = 0;
     bool nef_based = false;
     bool remesh_after_layers = false;
@@ -20,7 +20,7 @@ class ModelGenUI : public UI{
     float tetrahedral_cell_radius_edge = 2.0;
     float tetrahedral_facet_angle      = 25.0;
     float tetrahedral_facet_size       = 2.0;
-    float tetrahedral_facet_distance   = 0.05;
+    float tetrahedral_facet_distance   = 0.5;
 	int    tetrahedral_remesh_iterations = 1;  
 
     void render() override;

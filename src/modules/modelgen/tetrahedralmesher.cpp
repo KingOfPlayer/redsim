@@ -2,8 +2,8 @@
 
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/tetrahedral_remeshing.h>
-#include <CGAL/Polygon_mesh_processing/repair.h>
-#include <CGAL/Polygon_mesh_processing/shape_predicates.h>
+#include <CGAL/Orthogonal_k_neighbor_search.h>
+#include <CGAL/Search_traits_3.h>
 
 
 C3t3 TetrahedralMesher::MeshToC3t3(
@@ -64,10 +64,58 @@ C3t3 TetrahedralMesher::MeshToC3t3(
         cell_size,
         CGAL::parameters::number_of_iterations(remesh_iterations)
     );*/
-
-    return c3t3;
 }
 
+C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<LabeledVertexGroup>& labeledVertexGroups) 
+{
+
+    for (auto fit = c3t3.facets_in_complex_begin(); fit != c3t3.facets_in_complex_end(); ++fit) 
+        {
+            c3t3.set_surface_patch_index(*fit, 0);
+        }
+
+    double max_distance_allowed = cell_size * 1.2;
+    double max_sq_distance = max_distance_allowed * max_distance_allowed;
+
+    for (const auto& labeledVertexGroup : labeledVertexGroups) {
+
+        std::vector<Point_3_fast> target_points;
+        target_points.reserve(labeledVertexGroup.points.size());
+        for (const auto& v : labeledVertexGroup.points) {
+            target_points.emplace_back(
+                CGAL::to_double(v.x),
+                CGAL::to_double(v.y),
+                CGAL::to_double(v.z)
+            );
+        }
+        Tree tree(target_points.begin(), target_points.end());
+
+        for (auto fit = c3t3.facets_in_complex_begin(); 
+                  fit != c3t3.facets_in_complex_end(); ++fit) 
+        {
+
+            if (c3t3.surface_patch_index(*fit) != 0)
+                continue;
+
+            Cell_handle cell    = fit->first;
+            int         oppIdx  = fit->second;
+
+            auto p0 = cell->vertex((oppIdx + 1) % 4)->point().point();
+            auto p1 = cell->vertex((oppIdx + 2) % 4)->point().point();
+            auto p2 = cell->vertex((oppIdx + 3) % 4)->point().point();
+
+            Point_3_fast centroid = CGAL::centroid(p0, p1, p2);
+
+            Neighbor_search search(tree, centroid, 1);
+            double sq_dist = search.begin()->second;
+
+            if (sq_dist < max_sq_distance) {
+                c3t3.set_surface_patch_index(*fit, labeledVertexGroup.label);
+            }
+        }
+    }
+    return c3t3;
+}
 
 Triangulation_3 TetrahedralMesher::C3t3ToMesh(C3t3 c3t3)
 {

@@ -103,7 +103,7 @@ ModelGenUI::ModelGenUI(RootUICtx* rootUICtx) : UI(rootUICtx) {
     LayerMapper& layerMapper = project->GetLayerMapper();
     
     qualityIndex = layerMapper.nozzleQuality;
-    nozzleDiameter = layerMapper.nozzle.diameter;
+    //nozzleDiameter = layerMapper.nozzle.diameter;
     nef_based = layerMapper.Nef_based;
-    remesh_after_layers = layerMapper.remesh_after_layers;
+    //remesh_after_layers = layerMapper.remesh_after_layers;
 }
