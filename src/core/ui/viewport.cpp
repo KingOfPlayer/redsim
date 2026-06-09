@@ -172,7 +172,22 @@ void Viewport::render() {
             if(project != nullptr){
                 if(project->HasShellMeshGenerated() != false){
                     std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
-                    VertexTool::SelectVertices(meshObj, glm::vec2(x1, y1), glm::vec2(x2, y2), camera->GetProjectionMatrix(size.x / size.y), camera->GetViewMatrix(), camera->GetPosition());
+
+                    std::vector<glm::vec3> selectedVertices = VertexTool::SelectVertices(
+                            meshObj,
+                            glm::vec2(x1, y1), 
+                            glm::vec2(x2, y2), 
+                            camera->GetProjectionMatrix(size.x / size.y), 
+                            camera->GetViewMatrix(), 
+                            camera->GetPosition()
+                        );
+                    if(!selectedVertices.empty()) {
+                        ctx->SetSelectedVertices(
+                            selectedVertices
+                        );
+                    } else {
+                        ctx->ClearSelectedVertices();
+                    }
                 }
             }
         }

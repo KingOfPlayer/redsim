@@ -6,6 +6,7 @@
 #include "gcodetoolsui.h"
 #include "viewport.h"
 #include "modelgenui.h"
+#include "labelui.h"
 
 RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     // Init IMGUI
@@ -26,6 +27,8 @@ RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     addUI(viewportUI);
     ModelGenUI* modelGenUI = new ModelGenUI(rootUICtx);
     addUI(modelGenUI);
+    LabelUI* labelUI = new LabelUI(rootUICtx);
+    addUI(labelUI);
 }
 
 RootUI::~RootUI() {

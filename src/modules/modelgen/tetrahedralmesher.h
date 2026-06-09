@@ -30,6 +30,7 @@ using Neighbor_search = CGAL::Orthogonal_k_neighbor_search<TreeTraits>;
 using Tree = Neighbor_search::Tree;
 
 #include <CGAL/IO/File_medit.h>
+#include "tetrahedralmeshertypes.h"
 
 struct TetrahedralMesherResult
 {
@@ -39,10 +40,6 @@ struct TetrahedralMesherResult
 };
 
 class TetrahedralMesher {
-	struct LabeledVertexGroup{
-		int label;
-		std::vector<glm::vec3> points;
-	};
 
 public:
 	double cell_size        = 2.0;
