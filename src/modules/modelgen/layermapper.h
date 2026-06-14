@@ -44,27 +44,27 @@
 //#include <CGAL/property_map.h>
 #include <boost/property_map/property_map.hpp>
 
-typedef K::Aff_transformation_2 Transformation;
-typedef CGAL::Polygon_2<K> Polygon_2;
-typedef CGAL::Straight_skeleton_2<K> Straight_skeleton_2;
-typedef CGAL::Polygon_with_holes_2<K> Polygon_with_holes_2;
-typedef CGAL::Polygon_set_2<K> Polygon_set_2;
-typedef CGAL::Polyhedron_3<K> Polyhedron;
-typedef CGAL::Nef_polyhedron_3<K> Nef_polyhedron;
+using Transformation = K::Aff_transformation_2 ;
+using Polygon_2 = CGAL::Polygon_2<K> ;
+using Straight_skeleton_2 = CGAL::Straight_skeleton_2<K> ;
+using Polygon_with_holes_2 = CGAL::Polygon_with_holes_2<K> ;
+using Polygon_set_2 = CGAL::Polygon_set_2<K> ;
+using Polyhedron = CGAL::Polyhedron_3<K> ;
+using Nef_polyhedron = CGAL::Nef_polyhedron_3<K> ;
 
 struct FaceInfo2
 {
 };
 
-typedef CGAL::Triangulation_vertex_base_2<K> Vb;
-typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo2, K> Fb;
-typedef CGAL::Constrained_triangulation_face_base_2<K, Fb> CFb;
-typedef CGAL::Triangulation_data_structure_2<Vb, CFb> TDS;
-typedef CGAL::Exact_intersections_tag Itag;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag> CDT;
+using Vb = CGAL::Triangulation_vertex_base_2<K>;
+using Fb = CGAL::Triangulation_face_base_with_info_2<FaceInfo2, K>;
+using CFb = CGAL::Constrained_triangulation_face_base_2<K, Fb>;
+using TDS = CGAL::Triangulation_data_structure_2<Vb, CFb>;
+using Itag = CGAL::Exact_intersections_tag;
+using CDT = CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag>;
 
-typedef CDT::Face_handle Face_handle;
-typedef boost::property_map<Mesh, CGAL::edge_is_feature_t>::type EIFMap;
+using Face_handle = CDT::Face_handle;
+using EIFMap = boost::property_map<Mesh, CGAL::edge_is_feature_t>::type;
 
 
 struct Nozzle2D {

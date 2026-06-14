@@ -5,6 +5,9 @@
 class Camera {
 glm::vec3 position;
 glm::vec3 target;
+glm::vec3 forward;
+glm::vec3 right;
+glm::vec3 up;
 
 float yaw;
 float pitch;
@@ -14,6 +17,7 @@ public:
 
     Camera(glm::vec3 position, glm::vec3 target, float yaw, float pitch, float distance, float sensitivity);
 
+    void UpdateCameraVectors();
     void Zoom(float delta);
     void Orbit(float deltaX, float deltaY);
     void Pan(float deltaX, float deltaY);

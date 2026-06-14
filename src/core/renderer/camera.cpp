@@ -11,6 +11,24 @@ Camera::Camera(glm::vec3 position, glm::vec3 target, float yaw, float pitch, flo
     this->sensitivity = sensitivity;
 }
 
+void Camera::UpdateCameraVectors()
+{
+    glm::vec3 dir;
+    dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    dir.y = sin(glm::radians(pitch));
+    dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    
+    forward = glm::normalize(dir);
+    right   = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    
+    if (glm::length(right) < 0.001f) {
+        right = glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+    
+    up = glm::normalize(glm::cross(right, forward));
+    position = target - forward * distance;
+}
+
 void Camera::Zoom(float delta)
 {
     distance -= delta * 0.5f;
@@ -20,11 +38,8 @@ void Camera::Zoom(float delta)
 
 void Camera::Pan(float deltaX, float deltaY)
 {
-    glm::vec3 forward = glm::normalize(target - position);
-    glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
-    glm::vec3 up = glm::normalize(glm::cross(right, forward));
-
-    float panSpeed = distance * sensitivity / 100.0f;
+    float panSpeed = distance * sensitivity * 0.01f;
+    
     glm::vec3 offset = (right * -deltaX * panSpeed) + (up * -deltaY * panSpeed);
 
     target += offset;
@@ -33,7 +48,7 @@ void Camera::Pan(float deltaX, float deltaY)
 
 void Camera::Orbit(float deltaX, float deltaY)
 {
-    yaw += -deltaX * sensitivity;
+    yaw   -= deltaX * sensitivity;
     pitch += deltaY * sensitivity;
 
     if (pitch > 89.0f)
@@ -44,16 +59,9 @@ void Camera::Orbit(float deltaX, float deltaY)
 
 glm::mat4 Camera::GetViewMatrix()
 {
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction = glm::normalize(direction);
+    UpdateCameraVectors();
 
-    position = target - direction * distance;
-
-    glm::mat4 view = glm::lookAt(position , target, glm::vec3(0, 1, 0));
-    return view;
+    return glm::lookAt(position, target, up);
 }
 
 glm::mat4 Camera::GetProjectionMatrix(float aspectRatio)
@@ -68,7 +76,5 @@ glm::mat4 Camera::GetViewProjectMatrix(float aspectRatio)
 
 glm::quat Camera::GetRotation()
 {
-    glm::quat yawRot = glm::angleAxis(glm::radians(-yaw), glm::vec3(0, 1, 0));
-    glm::quat pitchRot = glm::angleAxis(glm::radians(pitch), glm::vec3(-1, 0, 0));
-    return yawRot * pitchRot;
+    return glm::quat_cast(GetViewMatrix());
 }

@@ -16,24 +16,11 @@ Object ModelgenHelper::MeshToRenderObject(const Mesh mesh)
     std::map<Mesh::Vertex_index, uint32_t> vertex_index_map;
     uint32_t current_index = 0;
     
-    
-    glm::vec3 min(1e9), max(-1e9);
     for (const auto &v : mesh.vertices()) {
         Point_3 p = mesh.point(v);
-        if(CGAL::to_double(p.x()) < min.x) min.x = CGAL::to_double(p.x());
-        if(CGAL::to_double(p.x()) > max.x) max.x = CGAL::to_double(p.x());
-        if(CGAL::to_double(p.y()) < min.y) min.y = CGAL::to_double(p.y());
-        if(CGAL::to_double(p.y()) > max.y) max.y = CGAL::to_double(p.y());
-        if(CGAL::to_double(p.z()) < min.z) min.z = CGAL::to_double(p.z());
-        if(CGAL::to_double(p.z()) > max.z) max.z = CGAL::to_double(p.z());
-    }
-
-    glm::vec3 center = (min + max) * 0.5f;
-    for (const auto &v : mesh.vertices()) {
-        Point_3 p = mesh.point(v);
-        vertices.push_back(CGAL::to_double(p.x()) - center.x);
-        vertices.push_back(CGAL::to_double(p.y()) - center.y);
-        vertices.push_back(CGAL::to_double(p.z()) - center.z);
+        vertices.push_back(CGAL::to_double(p.x()));
+        vertices.push_back(CGAL::to_double(p.y()));
+        vertices.push_back(CGAL::to_double(p.z()));
         vertex_index_map[v] = current_index++;
     }
 

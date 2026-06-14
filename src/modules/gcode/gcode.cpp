@@ -223,10 +223,10 @@ void GCodeModule::ProcessGCommand(const GCodeProgramCommand &cmd)
                 state.globalPosition.x = arg.value;
                 break;
             case 'Y':
-                state.globalPosition.z = arg.value;
+                state.globalPosition.y = arg.value;
                 break;
             case 'Z':
-                state.globalPosition.y = arg.value;
+                state.globalPosition.z = arg.value;
                 break;
             case 'E':
                 state.globalPosition.e = arg.value;
@@ -305,17 +305,6 @@ void GCodeModule::SavePointsAndPathsToObj(const char *outputPath)
 
 Object GCodeModule::ConvertPathToRenderObject() {
 
-    glm::vec3 min(1e9), max(-1e9);
-    for (auto& p : points) {
-        if(p.x < min.x) min.x = p.x; if(p.x > max.x) max.x = p.x;
-        if(p.y < min.y) min.y = p.y; if(p.y > max.y) max.y = p.y;
-        if(p.z < min.z) min.z = p.z; if(p.z > max.z) max.z = p.z;
-    }
-
-    // 2. Calculate the Center
-    glm::vec3 center = (min + max) * 0.5f;
-
-    // 3. Create Vertices relative to that center
 
     Object obj;
     obj.drawMode = GL_LINES;
@@ -324,18 +313,12 @@ Object GCodeModule::ConvertPathToRenderObject() {
 
     std::vector<float> vertices;
     for (const auto& p : points) {
-        vertices.push_back(p.x - center.x);
-        vertices.push_back(p.y - center.y);
-        vertices.push_back(p.z - center.z);
-    }
-    obj.vertices = vertices;
-
-    /*std::vector<float> vertices;
-    for (const auto& p : points) {
         vertices.push_back(p.x);
         vertices.push_back(p.y);
         vertices.push_back(p.z);
-    }*/
+        printf("Added vertex: (%.2f, %.2f, %.2f)\n", p.x, p.y, p.z);
+    }
+    obj.vertices = vertices;
 
     std::vector<unsigned int> indices;
     for (const auto& path : paths) {

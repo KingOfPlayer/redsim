@@ -9,8 +9,10 @@ if(CCACHE_PROGRAM)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the build type" FORCE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the build type" FORCE)
 endif()
+
+add_compile_options(-O0)
 
 message(STATUS "Selected build type: ${CMAKE_BUILD_TYPE}")
 

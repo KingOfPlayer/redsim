@@ -76,7 +76,7 @@ Viewport::Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
         0.5f
     );
     renderer = std::make_unique<Renderer>(800, 600);
-    grid = std::make_unique<Object>(CreateGrid(10, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f)));
+    grid = std::make_unique<Object>(CreateGrid(1000, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f)));
     shaderProgram = Shader::RegisterShaderProgram(vertexShaderSource, fragmentShaderSource);
 
     // ImViewGuizmo style configuration
@@ -120,8 +120,10 @@ void Viewport::render() {
             std::unique_ptr<Object>& gcodeObj = project->GetGCodeRenderObject();
             renderer->DrawObject(gcodeObj, shaderProgram);
         }
-
-        if(project->HasShellMeshGenerated() != false){
+        if(project->HasTetrahedralMeshGenerated() != false){
+            std::unique_ptr<Object>& meshObj = project->GetTetrahedralMeshMeshRenderObject();
+            renderer->DrawObject(meshObj, shaderProgram, true);
+        } else if(project->HasShellMeshGenerated() != false){
             std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
             renderer->DrawObject(meshObj, shaderProgram, true);
         }
@@ -170,8 +172,9 @@ void Viewport::render() {
             printf("Mouse Drag from (%.2f, %.2f) to (%.2f, %.2f)\n", x1, y1, x2, y2);
 
             if(project != nullptr){
-                if(project->HasShellMeshGenerated() != false){
-                    std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
+                if(project->HasTetrahedralMeshGenerated() != false){
+                    
+                    std::unique_ptr<Object>& meshObj = project->GetTetrahedralMeshMeshRenderObject();
 
                     std::vector<glm::vec3> selectedVertices = VertexTool::SelectVertices(
                             meshObj,
@@ -213,9 +216,10 @@ void Viewport::render() {
     }
 
     // Debug
-    if (cameraUpdated) {
+    /*if (cameraUpdated) {
         glm::vec3 cameraPos = camera->GetPosition();
         glm::vec3 cameraTarget = camera->GetTarget();
+        
         printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
         printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
         // print view matrix
@@ -234,7 +238,7 @@ void Viewport::render() {
         for (int i = 0; i < 4; i++) {
             printf("%.2f %.2f %.2f %.2f\n", viewProj[i][0], viewProj[i][1], viewProj[i][2], viewProj[i][3]);
         }
-    }
+    }*/
 
     // ImViewGuizmo
     float padding   = 30.f;

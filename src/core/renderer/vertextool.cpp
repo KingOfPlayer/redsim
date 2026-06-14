@@ -43,20 +43,20 @@ std::vector<glm::vec3> VertexTool::SelectVertices(const std::unique_ptr<Object>&
     // Check each vertex against the frustum planes
     for (size_t i = 0; i < object->vertices.size(); i += 3) {
         glm::vec3 vertexPos(object->vertices[i], object->vertices[i + 1], object->vertices[i + 2]);
-
+        
         // Transform vertex to world space (with same transforms as rendering)
-        vertexPos = glm::vec3(modelMatrix * glm::vec4(vertexPos, 1.0f));
+        glm::vec3 vertexPos_test = glm::vec3(modelMatrix * glm::vec4(vertexPos, 1.0f));
 
         bool isSelected = true;
         for (const auto& plane : frustumPlanes) {
-            if (!plane.isPointInFront(vertexPos)) {
+            if (!plane.isPointInFront(vertexPos_test)) {
                 isSelected = false;
                 break;
             }
         }
         
         if (isSelected) {
-            selectedVertices.push_back(vertexPos / RENDERSCALE); // Revert the global scale for accurate position
+            selectedVertices.push_back(vertexPos);
             printf("Selected vertex %zu at: (%.2f, %.2f, %.2f)\n", selectedVertices.size(), vertexPos.x, vertexPos.y, vertexPos.z);
         }
     }
@@ -69,6 +69,7 @@ Object VertexTool::CreateSelectedVerticesObject()
 {
     Object obj;
     obj.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);  // Red points
+
     obj.drawMode = GL_POINTS;
     obj.useIndices = false;
 

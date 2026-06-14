@@ -8,14 +8,47 @@
 #include "../modelgen/layermapper.h"
 #include "../modelgen/modelgenhelper.h"
 #include "../modelgen/tetrahedralmesher.h"
+#include "../freefem/freefemtype.h"
+#include "../freefem/freefem.h"
+#include "../freefem/freefemscript.h"
 
 Project::Project(){
     gcodeModule = std::make_unique<GCodeModule>();
     layerMapper = std::make_unique<LayerMapper>();
     tetrahedralMesher = std::make_unique<TetrahedralMesher>();
+    freefemScript = std::make_unique<FreeFemScript>();
+    freefemModule = std::make_unique<FreeFemModule>();
 }
 
 Project::~Project(){
+}
+
+std::string Project::GetCurrentFilePath(){
+    FilePath* currentFilepath = gcodeModule->currentFile.get();
+    if(currentFilepath) {
+        return currentFilepath->path;
+    } else {
+        return "";
+    }
+}
+
+std::string Project::GetFileDirectory(){
+    std::string currentFilepath = GetCurrentFilePath();
+    if (currentFilepath.empty()) {
+        return "";
+    }
+    std::string fileDirectory = currentFilepath.substr(0, currentFilepath.find_last_of("/\\"));
+    return fileDirectory;
+}
+
+std::string Project::GetFilenameWithoutExtension(){
+    std::string currentFilepath = GetCurrentFilePath();
+    if (currentFilepath.empty()) {
+        return "";
+    }
+    std::string filenameWithoutExt = currentFilepath.substr(currentFilepath.find_last_of("/\\") + 1);
+    filenameWithoutExt = filenameWithoutExt.substr(0, filenameWithoutExt.find_last_of('.'));
+    return filenameWithoutExt;
 }
 
 void Project::LoadGCode(FilePath* filepath){
@@ -68,8 +101,6 @@ void Project::GenerateShellMesh(){
     printf("Generated 3D Mesh from Layers.\n");
 }
 
-
-
 bool Project::HasShellMeshGenerated(){
     return isMeshGenerated;
 }
@@ -91,10 +122,19 @@ void Project::GenerateTetrahedralMesh(){
     TetrahedralMesherResult result = tetrahedralMesher->ProcessMeshForTetrahedral(*shellMesh);
     isTetrahedralMeshGenerated = true;
     tetrahedralMeshResult = std::make_unique<TetrahedralMesherResult>(std::move(result));
+
+    TetrahedralMeshRenderObject = std::make_unique<Object>(
+        ModelgenHelper::MeshToRenderObject(tetrahedralMeshResult->mesh)
+    );
 }
 
 bool Project::HasTetrahedralMeshGenerated(){
     return isTetrahedralMeshGenerated;
+}
+
+
+std::unique_ptr<Object>& Project::GetTetrahedralMeshMeshRenderObject(){
+    return TetrahedralMeshRenderObject;
 }
 
 void Project::SaveTetrahedralMeshToFile(){
@@ -118,8 +158,31 @@ void Project::SaveTetrahedralMeshToFile(){
     std::string outputFilePath = fileDirectory + "/" + outputPath; // ".../.../test_tetrahedral.mesh"
 
     tetrahedralMesher->SaveTetrahedralMesherResultToFile(*tetrahedralMeshResult, outputFilePath);
+    freefemScript->setMeshFilePath(outputFilePath);
+    isTetrahedralMeshSaved = true;
+    printf("Tetrahedral mesh saved to: %s\n", outputFilePath.c_str());
 }
 
 TetrahedralMesher& Project::GetTetrahedralMesher(){
     return *tetrahedralMesher;
+}
+
+FreeFemScript& Project::GetFreeFemScriptInstance(){
+    return *freefemScript;
+}
+
+FreeFemModule& Project::GetFreeFemModuleInstance(){
+    return *freefemModule;
+}
+
+void Project::ApplyLabel(std::vector<std::unique_ptr<VertexGroupBaseType>> groups){
+    if(!HasTetrahedralMeshGenerated()) {
+        printf("No tetrahedral mesh generated yet. Cannot label mesh.\n");
+        return;
+    }
+
+    tetrahedralMeshResult->c3t3 = tetrahedralMesher->LabelC3t3(tetrahedralMeshResult->c3t3, groups);
+    
+    freefemScript->setVertexGroups(std::move(groups));
+    
 }

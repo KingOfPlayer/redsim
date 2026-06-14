@@ -8,7 +8,9 @@ glm::mat4 Object::GetModelMatrix() {
     model = glm::rotate(model, glm::radians(rotation.x), {1, 0, 0});
     model = glm::rotate(model, glm::radians(rotation.y), {0, 1, 0});
     model = glm::rotate(model, glm::radians(rotation.z), {0, 0, 1});
-    model = glm::scale(model, scale);
+    glm::vec3 correct_scale = scale;
+    correct_scale.y *= -1; // Invert Y scale to correct for coordinate system
+    model = glm::scale(model, correct_scale);
     return model;
 }
 

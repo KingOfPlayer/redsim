@@ -11,6 +11,11 @@ struct FilePath;
 class TetrahedralMesher;
 struct TetrahedralMesherResult;
 
+class FreeFemScript;
+class FreeFemModule;
+
+struct VertexGroupBaseType;
+
 class Object;
 
 class Project {
@@ -27,12 +32,19 @@ class Project {
     std::unique_ptr<TetrahedralMesher> tetrahedralMesher;
     bool isTetrahedralMeshGenerated = false;
     std::unique_ptr<TetrahedralMesherResult> tetrahedralMeshResult;
+    std::unique_ptr<Object> TetrahedralMeshRenderObject;
+    bool isTetrahedralMeshSaved = false;
     
-
+    std::unique_ptr<FreeFemScript> freefemScript;
+    std::unique_ptr<FreeFemModule> freefemModule;
 public:
     Project();
     ~Project();
     bool isProjectLoaded();
+
+    std::string GetCurrentFilePath();
+    std::string GetFileDirectory();
+    std::string GetFilenameWithoutExtension();
 
     void LoadGCode(FilePath* filepath);
     FilePath* GetCurrentGCodeFilePath();
@@ -48,7 +60,12 @@ public:
 
     void GenerateTetrahedralMesh();
     bool HasTetrahedralMeshGenerated();
+    std::unique_ptr<Object>& GetTetrahedralMeshMeshRenderObject();
+    void ApplyLabel(std::vector<std::unique_ptr<VertexGroupBaseType>> groups);
     void SaveTetrahedralMeshToFile();
     TetrahedralMesher& GetTetrahedralMesher();
+
+    FreeFemScript& GetFreeFemScriptInstance();
+    FreeFemModule& GetFreeFemModuleInstance();
 
 };

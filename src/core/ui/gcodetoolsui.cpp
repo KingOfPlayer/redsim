@@ -56,6 +56,7 @@ void GCodeTools::render() {
     }
 
     if(ImGui::Button("Load GCode File into Project")){
+        //LoadFileIntoProject(project);
         std::thread(LoadFileIntoProject, project).detach();
     }
 

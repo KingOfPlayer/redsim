@@ -165,7 +165,7 @@ Mesh LayerMapper::PolygonsLayerToMesh(std::vector<Polygon_with_holes_2>& layer, 
 
     Mesh extruded_layer;
 
-    CGAL::Polygon_mesh_processing::extrude_mesh(flat_mesh, extruded_layer, K::Vector_3(0, layer_height + LAYER_OVERLAP * 2, 0));
+    CGAL::Polygon_mesh_processing::extrude_mesh(flat_mesh, extruded_layer, K::Vector_3(0, layer_height + LAYER_OVERLAP*2, 0));
     
     /*printf("Extruded layer to 3D mesh with %u vertices and %u faces.\n",
             extruded_layer.number_of_vertices(),
@@ -316,8 +316,8 @@ Mesh LayerMapper::GenerateMesh(std::vector<GCodeLayer> layers)
 }
 
 void LayerMapper::ShiftLayerMesh(Mesh& extruded_layer, float layer_offset, float layer_height) {
-    double z_offset = layer_offset + layer_height + LAYER_OVERLAP;
-    //printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
+    double z_offset = layer_offset - layer_height + LAYER_OVERLAP;
+    printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
     
     CGAL::Aff_transformation_3<K> translation(CGAL::TRANSLATION, K::Vector_3(0, z_offset, 0));
 

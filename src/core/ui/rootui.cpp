@@ -7,6 +7,7 @@
 #include "viewport.h"
 #include "modelgenui.h"
 #include "labelui.h"
+#include "freefemui.h"
 
 RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     // Init IMGUI
@@ -29,6 +30,8 @@ RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     addUI(modelGenUI);
     LabelUI* labelUI = new LabelUI(rootUICtx);
     addUI(labelUI);
+    FreefemUI* freefemUI = new FreefemUI(rootUICtx);
+    addUI(freefemUI);
 }
 
 RootUI::~RootUI() {

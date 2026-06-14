@@ -2,7 +2,7 @@
 
 mkdir -p build
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release .. 
 
 if [ $? -ne 0 ]; then
     echo "Configuration failed!"

@@ -32,11 +32,13 @@ using Tree = Neighbor_search::Tree;
 #include <CGAL/IO/File_medit.h>
 #include "tetrahedralmeshertypes.h"
 
+class VertexGroupBaseType;
+
 struct TetrahedralMesherResult
 {
 	C3t3 c3t3;
 	//Triangulation_3 volume;
-	//Mesh            surface;
+	Mesh mesh;
 };
 
 class TetrahedralMesher {
@@ -48,11 +50,12 @@ public:
 	double facet_size       = 2.0;
 	double facet_distance   = 0.05;
 	int    remesh_iterations = 1;  
+	
 	C3t3 MeshToC3t3(const Mesh& input_mesh);
-	C3t3 LabelC3t3(C3t3& c3t3, const std::vector<LabeledVertexGroup>& labeledVertexGroups);
+	C3t3 LabelC3t3(C3t3& c3t3, const std::vector<std::unique_ptr<VertexGroupBaseType>>& groups);
 	Triangulation_3 C3t3ToMesh(C3t3);
 
 	TetrahedralMesherResult ProcessMeshForTetrahedral(const Mesh& input_mesh);
-	//Mesh TetrahedralToMesh(const Triangulation_3& tr);
+	Mesh TetrahedralToMesh(const C3t3& c3t3);
 	static void SaveTetrahedralMesherResultToFile(const TetrahedralMesherResult& result, const std::string& filename);
 };

@@ -5,6 +5,8 @@
 #include <CGAL/Orthogonal_k_neighbor_search.h>
 #include <CGAL/Search_traits_3.h>
 
+#include "../freefem/freefemtype.h"
+
 
 C3t3 TetrahedralMesher::MeshToC3t3(
     const Mesh& input_mesh
@@ -64,24 +66,31 @@ C3t3 TetrahedralMesher::MeshToC3t3(
         cell_size,
         CGAL::parameters::number_of_iterations(remesh_iterations)
     );*/
+
+    return c3t3;
 }
 
-C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<LabeledVertexGroup>& labeledVertexGroups) 
+C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<std::unique_ptr<VertexGroupBaseType>>& groups) 
 {
 
     for (auto fit = c3t3.facets_in_complex_begin(); fit != c3t3.facets_in_complex_end(); ++fit) 
-        {
-            c3t3.set_surface_patch_index(*fit, 0);
-        }
+    {
+        C3t3::Facet current_facet = *fit;
+        c3t3.set_surface_patch_index(current_facet, 1);
+    }
 
-    double max_distance_allowed = cell_size * 1.2;
+    double max_distance_allowed = cell_size * 2.0;
     double max_sq_distance = max_distance_allowed * max_distance_allowed;
 
-    for (const auto& labeledVertexGroup : labeledVertexGroups) {
+    for (const auto& groupPtr : groups) {
+        if (!groupPtr) continue;
+
+        const auto& raw_points = groupPtr->getPoints();
+        int current_label = groupPtr->getLabelID();
 
         std::vector<Point_3_fast> target_points;
-        target_points.reserve(labeledVertexGroup.points.size());
-        for (const auto& v : labeledVertexGroup.points) {
+        target_points.reserve(raw_points.size());
+        for (const auto& v : raw_points) {
             target_points.emplace_back(
                 CGAL::to_double(v.x),
                 CGAL::to_double(v.y),
@@ -93,24 +102,25 @@ C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<LabeledVertexGro
         for (auto fit = c3t3.facets_in_complex_begin(); 
                   fit != c3t3.facets_in_complex_end(); ++fit) 
         {
-
-            if (c3t3.surface_patch_index(*fit) != 0)
+            C3t3::Facet current_facet = *fit;
+            if (c3t3.surface_patch_index(current_facet) > LABEL_ID_OFFSET)
                 continue;
 
-            Cell_handle cell    = fit->first;
-            int         oppIdx  = fit->second;
+            Cell_handle cell = current_facet.first;
+            int         index = current_facet.second;
 
-            auto p0 = cell->vertex((oppIdx + 1) % 4)->point().point();
-            auto p1 = cell->vertex((oppIdx + 2) % 4)->point().point();
-            auto p2 = cell->vertex((oppIdx + 3) % 4)->point().point();
+            auto p0 = cell->vertex((index + 1) % 4)->point().point();
+            auto p1 = cell->vertex((index + 2) % 4)->point().point();
+            auto p2 = cell->vertex((index + 3) % 4)->point().point();
 
             Point_3_fast centroid = CGAL::centroid(p0, p1, p2);
 
             Neighbor_search search(tree, centroid, 1);
             double sq_dist = search.begin()->second;
-
             if (sq_dist < max_sq_distance) {
-                c3t3.set_surface_patch_index(*fit, labeledVertexGroup.label);
+                c3t3.set_surface_patch_index(current_facet, current_label + LABEL_ID_OFFSET);
+
+                printf("labeled from %d to %d\n", c3t3.surface_patch_index(current_facet), current_label + LABEL_ID_OFFSET);
             }
         }
     }
@@ -133,44 +143,84 @@ Triangulation_3 TetrahedralMesher::C3t3ToMesh(C3t3 c3t3)
 }
 
 // For future use
-/*Mesh TetrahedralMesher::TetrahedralToMesh(const Triangulation_3& tr) {
+Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
     Mesh output_mesh;
+    std::map<C3t3::Triangulation::Vertex_handle, Mesh::Vertex_index> vertex_map;
 
-    for (auto fit = tr.finite_facets_begin(); fit != tr.finite_facets_end(); ++fit)
+    for (auto fit = c3t3.facets_in_complex_begin(); fit != c3t3.facets_in_complex_end(); ++fit)
     {
-        auto cell   = fit->first;
-        int  index  = fit->second;
-        auto neighbor = cell->neighbor(index);
-
-        bool cell_inside     = (cell->subdomain_index()     != 0);
-        bool neighbor_inside = (neighbor->subdomain_index() != 0);
-
-        if (cell_inside != neighbor_inside)
-        {
-            std::array<Point_3, 3> pts;
-            int k = 0;
-            for (int i = 0; i < 4; ++i)
-                if (i != index)
-                    pts[k++] = cell->vertex(i)->point().point();
-
-            auto v0 = output_mesh.add_vertex(pts[0]);
-            auto v1 = output_mesh.add_vertex(pts[1]);
-            auto v2 = output_mesh.add_vertex(pts[2]);
-            output_mesh.add_face(v0, v1, v2);
+        Cell_handle cell = fit->first;
+        int index        = fit->second;
+        
+        if (cell->subdomain_index() == 0) {
+            cell = cell->neighbor(index);
+            index = cell->index(fit->first);
         }
+        int i1 = (index + 1) % 4;
+        int i2 = (index + 2) % 4;
+        int i3 = (index + 3) % 4;
+
+        if (index % 2 == 0) {
+            std::swap(i1, i2);
+        }
+
+        std::array<Cell_handle::value_type::Vertex_handle, 3> v_handles = {
+            cell->vertex(i1),
+            cell->vertex(i2),
+            cell->vertex(i3)
+        };
+
+        std::array<Mesh::Vertex_index, 3> face_vertices;
+        for (int i = 0; i < 3; ++i)
+        {
+            auto v_handle = v_handles[i];
+            if (vertex_map.find(v_handle) == vertex_map.end())
+            {
+                auto pt_fast = v_handle->point().point();
+                Mesh::Point pt(
+                    CGAL::to_double(pt_fast.x()), 
+                    CGAL::to_double(pt_fast.y()), 
+                    CGAL::to_double(pt_fast.z())
+                );
+                vertex_map[v_handle] = output_mesh.add_vertex(pt);
+            }
+            face_vertices[i] = vertex_map[v_handle];
+        }
+
+        output_mesh.add_face(face_vertices[0], face_vertices[1], face_vertices[2]);
     }
 
     return output_mesh;
-}*/
+}
 
 void TetrahedralMesher::SaveTetrahedralMesherResultToFile(const TetrahedralMesherResult& result, const std::string& filename) {
 	std::ofstream out(filename);
-	CGAL::IO::write_MEDIT(out, result.c3t3);
+	CGAL::IO::write_MEDIT(out, result.c3t3,
+        CGAL::parameters::show_patches(true)
+                     .rebind_labels(false)
+                     .all_cells(true)
+                     .all_vertices(true)
+    );
+
+    // Fix file 
+    // First line "MeshVersionFormatted 1" change to "MeshVersionFormatted 0"
+    std::fstream file(filename, std::ios::in | std::ios::out | std::ios::binary);
+    if (!file.is_open()) return;
+
+    std::string expectedHeader = "MeshVersionFormatted 1";
+    std::string actualHeader(expectedHeader.length(), ' ');
+
+    if (file.read(&actualHeader[0], expectedHeader.length())) {
+        if (actualHeader == expectedHeader) {
+            file.seekp(21, std::ios::beg);
+            file.put('0'); 
+        }
+    }
 }
 
 TetrahedralMesherResult TetrahedralMesher::ProcessMeshForTetrahedral(const Mesh& input_mesh) {
 	TetrahedralMesherResult result;
 	result.c3t3 = MeshToC3t3(input_mesh);
-	// result.surface = TetrahedralToMesh(result.volume);
+	result.mesh = TetrahedralToMesh(result.c3t3);
 	return result;
 }
