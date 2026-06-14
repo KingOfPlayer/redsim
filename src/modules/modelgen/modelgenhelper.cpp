@@ -8,7 +8,7 @@ Object ModelgenHelper::MeshToRenderObject(const Mesh mesh)
     Object obj;
     obj.drawMode = GL_TRIANGLES;
     obj.useIndices = true;
-    obj.color = glm::vec4(0.2f, 0.7f, 0.3f, 1.0f);
+    obj.setUniform("Color", glm::vec4(0.2f, 0.7f, 0.3f, 1.0f));
     
     std::vector<float> vertices;
     std::vector<unsigned int> indices;

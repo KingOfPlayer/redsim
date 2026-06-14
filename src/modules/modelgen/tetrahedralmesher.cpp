@@ -79,7 +79,7 @@ C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<std::unique_ptr<
         c3t3.set_surface_patch_index(current_facet, 1);
     }
 
-    double max_distance_allowed = cell_size * 2.0;
+    double max_distance_allowed = cell_size * 1.2;
     double max_sq_distance = max_distance_allowed * max_distance_allowed;
 
     for (const auto& groupPtr : groups) {

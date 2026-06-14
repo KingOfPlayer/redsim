@@ -68,7 +68,7 @@ std::vector<glm::vec3> VertexTool::SelectVertices(const std::unique_ptr<Object>&
 Object VertexTool::CreateSelectedVerticesObject()
 {
     Object obj;
-    obj.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);  // Red points
+    obj.setUniform("Color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Red points
 
     obj.drawMode = GL_POINTS;
     obj.useIndices = false;

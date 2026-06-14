@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "shader.h"
 
 Renderer::Renderer(int width, int height): Viewport_Width(width), Viewport_Height(height) {
 
@@ -9,7 +10,17 @@ Renderer::Renderer(int width, int height): Viewport_Width(width), Viewport_Heigh
         glm::vec3(0.0f, 1.0f, 0.0f)
     );
 
-    
+    ShaderFactory::RegisterFromSource("default", R"(#version 330 core
+layout (location = 0) in vec3 aPos;
+uniform mat4 u_CombinedMatrix;
+void main() {
+    gl_Position = u_CombinedMatrix * vec4(aPos, 1.0);
+})", R"(#version 330 core
+out vec4 FragColor;
+uniform vec4 Color;
+void main() {
+    FragColor = Color;
+})");
 }
 
 void Renderer::CreateFramebuffer(int width, int height) {
@@ -91,9 +102,9 @@ void Renderer::DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgr
     GLint mvpLoc = glGetUniformLocation(shaderProgram, "u_CombinedMatrix");
     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    // Send Color
-    GLint colorLoc = glGetUniformLocation(shaderProgram, "u_Color");
-    glUniform4fv(colorLoc, 1, glm::value_ptr(obj->color));
+    for (const auto& uniform : obj->getUniforms()) {
+        std::visit(UniformApplier{shaderProgram, uniform.name}, uniform.value);
+    }
 
     glBindVertexArray(obj->VAO);
 
@@ -108,6 +119,7 @@ void Renderer::DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgr
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+        GLint colorLoc = glGetUniformLocation(shaderProgram, "Color");
         glm::vec4 wireColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); 
         glUniform4fv(colorLoc, 1, glm::value_ptr(wireColor));
 

@@ -23,7 +23,8 @@ void FreefemUI::render(){
         freefemScript.GenerateScript();
     }
 
-     FreeFemStatus status = freefemModule.GetStatus();
+    FreeFemModule& freefemModule = project->GetFreeFemModuleInstance();
+    FreeFemStatus status = freefemModule.GetStatus();
     std::string statusStr;
     switch (status) {
         case FreeFemStatus::Idle: statusStr = "Idle"; break;
@@ -33,17 +34,16 @@ void FreefemUI::render(){
         case FreeFemStatus::Aborted: statusStr = "Aborted"; break;
     }
 
-    FreeFemModule& freefemModule = project->GetFreeFemModuleInstance();
     if(ImGui::Button("Run FreeFEM Simulation")){
         std::string scriptPath = project->GetFileDirectory() + "/" + project->GetFilenameWithoutExtension() + "_simulation.edp";
         freefemModule.StartSimulation(scriptPath);
     }
-
-    ImGui::beginDisabled(status != FreeFemStatus::Running);
+    ImGui::SameLine();
+    ImGui::BeginDisabled(status != FreeFemStatus::Running);
     if(ImGui::Button("Abort Simulation")){
         freefemModule.AbortSimulation();
     }
-    ImGui::endDisabled();
+    ImGui::EndDisabled();
    
     ImGui::Text("Current Freefem Status: %s", statusStr.c_str());
 

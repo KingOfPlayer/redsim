@@ -304,19 +304,16 @@ void GCodeModule::SavePointsAndPathsToObj(const char *outputPath)
 }
 
 Object GCodeModule::ConvertPathToRenderObject() {
-
-
     Object obj;
     obj.drawMode = GL_LINES;
     obj.useIndices = true;
-    obj.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Bright Red to see easily
+    obj.setUniform("Color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
     std::vector<float> vertices;
     for (const auto& p : points) {
         vertices.push_back(p.x);
         vertices.push_back(p.y);
         vertices.push_back(p.z);
-        printf("Added vertex: (%.2f, %.2f, %.2f)\n", p.x, p.y, p.z);
     }
     obj.vertices = vertices;
 

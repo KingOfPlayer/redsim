@@ -11,28 +11,10 @@
 
 #include "../../modules/project/project.h"
 
-const char* vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    uniform mat4 u_CombinedMatrix;
-    void main() {
-        gl_Position = u_CombinedMatrix * vec4(aPos, 1.0);
-    }
-)";
-
-const char* fragmentShaderSource = R"(
-    #version 330 core
-    out vec4 FragColor;
-    uniform vec4 u_Color;
-    void main() {
-        FragColor = u_Color;
-    }
-)";
-
 Object CreateGrid(int size, float size_cell, glm::vec4 color) {
     printf("Creating grid of size %d with cell size %.2f\n", size, size_cell);
     Object obj;
-    obj.color = color;
+    obj.setUniform("Color", color); 
     obj.drawMode = GL_LINES;
     obj.useIndices = false;
 
@@ -77,7 +59,6 @@ Viewport::Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
     );
     renderer = std::make_unique<Renderer>(800, 600);
     grid = std::make_unique<Object>(CreateGrid(1000, 1.0f, glm::vec4(0.7f, 0.7f, 0.7f, 1.0f)));
-    shaderProgram = Shader::RegisterShaderProgram(vertexShaderSource, fragmentShaderSource);
 
     // ImViewGuizmo style configuration
     auto& style = ImViewGuizmo::GetStyle();
@@ -113,19 +94,19 @@ void Viewport::render() {
     renderer->SetViewProjection(camera->GetViewProjectMatrix(size.x / size.y));
     renderer->Resize(size.x, size.y);
     renderer->DrawBegin();
-    renderer->DrawObject(grid, shaderProgram);
+    renderer->DrawObject(grid, ShaderFactory::GetProgram("default"));
 
     if(project != nullptr){
         if(project->HasGCodeRenderObject() != false){
             std::unique_ptr<Object>& gcodeObj = project->GetGCodeRenderObject();
-            renderer->DrawObject(gcodeObj, shaderProgram);
+            renderer->DrawObject(gcodeObj, ShaderFactory::GetProgram("default"));
         }
         if(project->HasTetrahedralMeshGenerated() != false){
             std::unique_ptr<Object>& meshObj = project->GetTetrahedralMeshMeshRenderObject();
-            renderer->DrawObject(meshObj, shaderProgram, true);
+            renderer->DrawObject(meshObj, ShaderFactory::GetProgram("default"), true);
         } else if(project->HasShellMeshGenerated() != false){
             std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
-            renderer->DrawObject(meshObj, shaderProgram, true);
+            renderer->DrawObject(meshObj, ShaderFactory::GetProgram("default"), true);
         }
     }
 
@@ -133,7 +114,7 @@ void Viewport::render() {
     if (!VertexTool::selectedVertices.empty()) {
         Object selectedVerticesObj = VertexTool::CreateSelectedVerticesObject();
         glPointSize(8.0f);
-        renderer->DrawObject(std::make_unique<Object>(selectedVerticesObj), shaderProgram);
+        renderer->DrawObject(std::make_unique<Object>(selectedVerticesObj), ShaderFactory::GetProgram("default"));
         glPointSize(1.0f);
     }
 

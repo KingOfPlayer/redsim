@@ -317,7 +317,7 @@ Mesh LayerMapper::GenerateMesh(std::vector<GCodeLayer> layers)
 
 void LayerMapper::ShiftLayerMesh(Mesh& extruded_layer, float layer_offset, float layer_height) {
     double z_offset = layer_offset - layer_height + LAYER_OVERLAP;
-    printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
+    //printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
     
     CGAL::Aff_transformation_3<K> translation(CGAL::TRANSLATION, K::Vector_3(0, z_offset, 0));
 

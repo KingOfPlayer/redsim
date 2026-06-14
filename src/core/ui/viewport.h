@@ -12,6 +12,7 @@ class Object;
 class Renderer;
 
 class Viewport : public UI {
+
     std::unique_ptr<Camera> camera;
     std::unique_ptr<Renderer> renderer;
     std::unique_ptr<Object> grid;
@@ -19,6 +20,7 @@ class Viewport : public UI {
 
 public:
     Viewport(RootUICtx* rootUICtx);
+    ~Viewport() = default;
 
     void render() override;
 };
