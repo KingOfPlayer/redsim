@@ -307,7 +307,7 @@ Object GCodeModule::ConvertPathToRenderObject() {
     Object obj;
     obj.drawMode = GL_LINES;
     obj.useIndices = true;
-    obj.setUniform("Color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    obj.setUniform("uColor", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
     std::vector<float> vertices;
     for (const auto& p : points) {

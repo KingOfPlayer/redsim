@@ -14,7 +14,7 @@
 Object CreateGrid(int size, float size_cell, glm::vec4 color) {
     printf("Creating grid of size %d with cell size %.2f\n", size, size_cell);
     Object obj;
-    obj.setUniform("Color", color); 
+    obj.setUniform("uColor", color); 
     obj.drawMode = GL_LINES;
     obj.useIndices = false;
 
@@ -96,17 +96,24 @@ void Viewport::render() {
     renderer->DrawBegin();
     renderer->DrawObject(grid, ShaderFactory::GetProgram("default"));
 
-    if(project != nullptr){
-        if(project->HasGCodeRenderObject() != false){
-            std::unique_ptr<Object>& gcodeObj = project->GetGCodeRenderObject();
-            renderer->DrawObject(gcodeObj, ShaderFactory::GetProgram("default"));
-        }
-        if(project->HasTetrahedralMeshGenerated() != false){
-            std::unique_ptr<Object>& meshObj = project->GetTetrahedralMeshMeshRenderObject();
-            renderer->DrawObject(meshObj, ShaderFactory::GetProgram("default"), true);
-        } else if(project->HasShellMeshGenerated() != false){
-            std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
-            renderer->DrawObject(meshObj, ShaderFactory::GetProgram("default"), true);
+    if(project != nullptr) {
+        if(project->isViewResultMode()){
+            std::unique_ptr<Object>& simObj = project->GetSimulationRenderObject();
+            if(simObj != nullptr){ 
+                renderer->DrawObject(simObj, ShaderFactory::GetProgram("FreeFemSimulation"));
+            }
+        } else {
+            if(project->HasGCodeRenderObject() != false){
+                std::unique_ptr<Object>& gcodeObj = project->GetGCodeRenderObject();
+                renderer->DrawObject(gcodeObj, ShaderFactory::GetProgram("default"));
+            }
+            if(project->HasTetrahedralMeshGenerated() != false){
+                std::unique_ptr<Object>& meshObj = project->GetTetrahedralMeshMeshRenderObject();
+                renderer->DrawObject(meshObj, ShaderFactory::GetProgram("default"), true);
+            } else if(project->HasShellMeshGenerated() != false){
+                std::unique_ptr<Object>& meshObj = project->GetMeshRenderObject();
+                renderer->DrawObject(meshObj, ShaderFactory::GetProgram("default"), true);
+            }
         }
     }
 

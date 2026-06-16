@@ -156,6 +156,7 @@ Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
             cell = cell->neighbor(index);
             index = cell->index(fit->first);
         }
+        
         int i1 = (index + 1) % 4;
         int i2 = (index + 2) % 4;
         int i3 = (index + 3) % 4;

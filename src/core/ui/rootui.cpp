@@ -8,6 +8,7 @@
 #include "modelgenui.h"
 #include "labelui.h"
 #include "freefemui.h"
+#include "freefemviewui.h"
 
 RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     // Init IMGUI
@@ -30,8 +31,10 @@ RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     addUI(modelGenUI);
     LabelUI* labelUI = new LabelUI(rootUICtx);
     addUI(labelUI);
-    FreefemUI* freefemUI = new FreefemUI(rootUICtx);
+    FreeFemUI* freefemUI = new FreeFemUI(rootUICtx);
     addUI(freefemUI);
+    FreeFemViewUI* freefemViewUI = new FreeFemViewUI(rootUICtx);
+    addUI(freefemViewUI);
 }
 
 RootUI::~RootUI() {

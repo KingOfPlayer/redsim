@@ -12,6 +12,7 @@ class FreeFemScript {
   std::vector<std::unique_ptr<VertexGroupBaseType>> vertexGroups;
   std::string scriptPath;
   std::string meshFilePath;
+  std::string scriptOutputPath;
   double EValue;
   double PoissonRatioValue;
 public:
@@ -31,6 +32,10 @@ public:
   }
   void setMeshFilePath(const std::string& path) {
       meshFilePath = path;
+  }
+
+  void setScriptOutputPath(const std::string& path) {
+      scriptOutputPath = path;
   }
 
   std::string getScriptPath(){

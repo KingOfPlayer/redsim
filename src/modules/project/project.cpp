@@ -11,6 +11,7 @@
 #include "../freefem/freefemtype.h"
 #include "../freefem/freefem.h"
 #include "../freefem/freefemscript.h"
+#include "../freefem/freefemview.h"
 
 Project::Project(){
     gcodeModule = std::make_unique<GCodeModule>();
@@ -18,6 +19,7 @@ Project::Project(){
     tetrahedralMesher = std::make_unique<TetrahedralMesher>();
     freefemScript = std::make_unique<FreeFemScript>();
     freefemModule = std::make_unique<FreeFemModule>();
+    freefemView = std::make_unique<FreeFemView>();
 }
 
 Project::~Project(){
@@ -185,4 +187,28 @@ void Project::ApplyLabel(std::vector<std::unique_ptr<VertexGroupBaseType>> group
     
     freefemScript->setVertexGroups(std::move(groups));
     
+}
+
+FreeFemView& Project::GetFreeFemViewInstance(){
+    return *freefemView;
+}
+
+void Project::LoadSimulationData() {
+    freefemView->loadSimulationData(GetFileDirectory() + "/" + GetFilenameWithoutExtension() + "_simulation_data.txt");
+    freefemView->loadSimulationMesh(GetFileDirectory() + "/" + GetFilenameWithoutExtension() + "_tetrahedral.mesh");
+    if(freefemView->isSimaulationResultReady()){
+        freefemView->generateRenderObject();
+    }
+}
+
+std::unique_ptr<Object>& Project::GetSimulationRenderObject() {
+    return freefemView->getRenderObject();
+}
+
+void Project::ToggleViewResultMode() {
+    ViewResultMode = !ViewResultMode;
+}
+
+bool Project::isViewResultMode() const {
+    return ViewResultMode;
 }

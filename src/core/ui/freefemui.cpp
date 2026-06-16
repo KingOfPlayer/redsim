@@ -4,7 +4,7 @@
 #include "../../modules/freefem/freefemscript.h"
 #include "../../modules/freefem/freefem.h"
 
-void FreefemUI::render(){
+void FreeFemUI::render(){
     RootUICtx* ctx = GetRootUIContext();
     Project* project = ctx->getProject();
 
@@ -20,6 +20,8 @@ void FreefemUI::render(){
 
         freefemScript.setMaterialProperties(EValue, PoissonRatioValue);
         freefemScript.setScriptPath(project->GetFileDirectory() + "/" + project->GetFilenameWithoutExtension() + "_simulation.edp");
+        freefemScript.setMeshFilePath(project->GetFileDirectory() + "/" + project->GetFilenameWithoutExtension() + "_tetrahedral.mesh");
+        freefemScript.setScriptOutputPath(project->GetFileDirectory() + "/" + project->GetFilenameWithoutExtension() + "_simulation_data.txt");
         freefemScript.GenerateScript();
     }
 

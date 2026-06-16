@@ -72,11 +72,18 @@ bool FreeFemScript::GenerateScript()
 		return false;
 	}
 
+	if (scriptOutputPath.empty())
+	{
+		printf("Warning: Script output path is empty. The generated script will not be saved to disk.");
+		return false;
+	}
+
 	std::string scriptContent = getBaseScript();
 
 	replacePlaceholder(scriptContent, "[[E_Value]]", std::to_string(EValue));
 	replacePlaceholder(scriptContent, "[[Possion_Ratio_Value]]", std::to_string(PoissonRatioValue));
 	replacePlaceholder(scriptContent, "[[MeshFilePath]]", meshFilePath);
+	replacePlaceholder(scriptContent, "[[ScriptOutputPath]]", scriptOutputPath);
 
 	std::string stiffnessParts;
 	std::string rhsParts;
@@ -186,23 +193,59 @@ ux[] = A^-1 * rhs;
 
 cout << "max |uz| = " << uz[].linfty << endl;
 
-Wh s11, s22, s33, s12, s13, s23, vmises;
+// --- 5. Post-Processing & Scalar Generation ---
 
-s11 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dx(ux);
-s22 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dy(uy);
-s33 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dz(uz);
-s12 = mu*(dy(ux)+dx(uy));
-s13 = mu*(dz(ux)+dx(uz));
-s23 = mu*(dz(uy)+dy(uz));
+// Scalar 1: Displacements & Displacement Magnitude
+Wh uMag = sqrt(ux^2 + uy^2 + uz^2);
+cout << "max |u| displacement magnitude = " << uMag[].max << " mm" << endl;
 
-vmises = sqrt(0.5*(
+Wh shapeChange = abs(dx(ux) + dy(uy) + dz(uz));
+
+// Compute raw stress components for scalar derivations
+Wh s11 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dx(ux);
+Wh s22 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dy(uy);
+Wh s33 = lambda*(dx(ux)+dy(uy)+dz(uz)) + 2.*mu*dz(uz);
+Wh s12 = mu*(dy(ux)+dx(uy));
+Wh s13 = mu*(dz(ux)+dx(uz));
+Wh s23 = mu*(dz(uy)+dy(uz));
+
+// Scalar 2: Von Mises Stress
+Wh vmises = sqrt(0.5*(
     (s11-s22)^2 + (s22-s33)^2 + (s33-s11)^2
   + 6.*(s12^2+s13^2+s23^2)
 ));
+cout << "max von Mises stress = " << vmises[].max << " MPa" << endl;
 
-cout << "max von Mises = " << vmises[].max << " MPa" << endl;
+// Scalar 3: Max Shear Stress (Tresca criterion component)
+// Approximation of max shear stress from the stress components
+Wh maxShear = sqrt(0.25 * (s11 - s22)^2 + s12^2); 
+cout << "max Shear stress = " << maxShear[].max << " MPa" << endl;
 
-cout << "Computation complete. Saving results to disk..." << endl;
+
+// --- 6. Optimized Export for OpenGL (6 Columns Per Vertex) ---
+ofstream file("[[ScriptOutputPath]]");
+file.precision(6);
+
+file.precision(6);
+
+for (int i = 0; i < Th.nv; ++i) {
+    // Get the actual spatial coordinates of vertex i using correct FreeFEM syntax
+    real xCoord = Th(i).x;
+    real yCoord = Th(i).y;
+    real zCoord = Th(i).z;
+
+    // Evaluate the FE solutions explicitly at those vertex coordinates
+    file << ux(xCoord, yCoord, zCoord) << " " 
+         << uy(xCoord, yCoord, zCoord) << " " 
+         << uz(xCoord, yCoord, zCoord) << " "
+         << uMag(xCoord, yCoord, zCoord) << " "
+         << shapeChange(xCoord, yCoord, zCoord) << " "
+         << vmises(xCoord, yCoord, zCoord) << " "
+         << maxShear(xCoord, yCoord, zCoord) << "\n";
+}
+file.flush;
+
+cout << "Simulation data exported successfully." << endl;
 
 )fe_script";
 }

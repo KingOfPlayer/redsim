@@ -11,10 +11,12 @@ struct FilePath;
 class TetrahedralMesher;
 struct TetrahedralMesherResult;
 
+struct VertexGroupBaseType;
+
 class FreeFemScript;
 class FreeFemModule;
 
-struct VertexGroupBaseType;
+class FreeFemView;
 
 class Object;
 
@@ -37,6 +39,10 @@ class Project {
     
     std::unique_ptr<FreeFemScript> freefemScript;
     std::unique_ptr<FreeFemModule> freefemModule;
+    
+    std::unique_ptr<FreeFemView> freefemView;
+
+    bool ViewResultMode = false;
 public:
     Project();
     ~Project();
@@ -67,5 +73,11 @@ public:
 
     FreeFemScript& GetFreeFemScriptInstance();
     FreeFemModule& GetFreeFemModuleInstance();
+    FreeFemView& GetFreeFemViewInstance();
 
+    void LoadSimulationData();
+    std::unique_ptr<Object>& GetSimulationRenderObject();
+
+    void ToggleViewResultMode();
+    bool isViewResultMode() const;
 };

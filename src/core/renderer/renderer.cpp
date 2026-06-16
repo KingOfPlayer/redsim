@@ -12,15 +12,85 @@ Renderer::Renderer(int width, int height): Viewport_Width(width), Viewport_Heigh
 
     ShaderFactory::RegisterFromSource("default", R"(#version 330 core
 layout (location = 0) in vec3 aPos;
-uniform mat4 u_CombinedMatrix;
+uniform mat4 uCombinedMatrix;
 void main() {
-    gl_Position = u_CombinedMatrix * vec4(aPos, 1.0);
+    gl_Position = uCombinedMatrix * vec4(aPos, 1.0);
 })", R"(#version 330 core
 out vec4 FragColor;
-uniform vec4 Color;
+uniform vec4 uColor;
 void main() {
-    FragColor = Color;
+    FragColor = uColor;
 })");
+
+    ShaderFactory::RegisterFromSource("FreeFemSimulation", 
+R"(#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aDisp;
+layout (location = 2) in float aDispMag;
+layout (location = 3) in float aShapeChange;
+layout (location = 4) in float aVonMises;
+layout (location = 5) in float aMaxShear;
+
+uniform mat4 uCombinedMatrix;
+
+// Visualization Control Flags
+uniform int uEnableDisplacement;  // 0 = Original Shape, 1 = Deformed Shape
+uniform float uDisplacementScale;
+
+uniform int uVisualizationMode;   // 0 = Color by Displacement Magnitude
+                                  // 1 = Color by Relative Shape Change
+                                  // 2 = Color by Von Mises Stress
+                                  // 3 = Color by Max Shear Stress
+
+out float vScalarValue; 
+
+void main() {
+    vec3 deformedPos = aPos;
+    if (uEnableDisplacement == 1) {
+        deformedPos += (aDisp * uDisplacementScale);
+    }
+    
+    gl_Position = uCombinedMatrix * vec4(deformedPos, 1.0);
+
+    if (uVisualizationMode == 0) {
+        vScalarValue = aDispMag;
+    } 
+    else if (uVisualizationMode == 1) {
+        vScalarValue = aShapeChange;
+    } 
+    else if (uVisualizationMode == 2) {
+        vScalarValue = aVonMises;
+    } 
+    else if (uVisualizationMode == 3) {
+        vScalarValue = aMaxShear;
+    }
+}
+)", 
+R"(#version 330 core
+in float vScalarValue;
+out vec4 FragColor;
+
+uniform float uMinScalar;
+uniform float uMaxScalar;
+
+vec3 GetJetColor(float value) {
+    float v = clamp(value, 0.0, 1.0);
+    float r = clamp(1.5 - abs(v * 4.0 - 3.0), 0.0, 1.0);
+    float g = clamp(1.5 - abs(v * 4.0 - 2.0), 0.0, 1.0);
+    float b = clamp(1.5 - abs(v * 4.0 - 1.0), 0.0, 1.0);
+    return vec3(r, g, b);
+}
+
+void main() {
+    float normalized = 0.0;
+    if (uMaxScalar > uMinScalar) {
+        normalized = (vScalarValue - uMinScalar) / (uMaxScalar - uMinScalar);
+    }
+    
+    vec3 color = GetJetColor(normalized);
+    FragColor = vec4(color, 1.0);
+}
+)");
 }
 
 void Renderer::CreateFramebuffer(int width, int height) {
@@ -94,12 +164,18 @@ void Renderer::DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgr
     model = glm::scale(model, globalScale);
     glm::mat4 mvp = viewProj * model; 
 
+    if(obj->useCulling) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+
     if(obj->drawMode == GL_LINES) {
         glLineWidth(obj->lineWidth);
     }
 
-    // Send to the uniform you defined in your vertex shader
-    GLint mvpLoc = glGetUniformLocation(shaderProgram, "u_CombinedMatrix");
+    GLint mvpLoc = glGetUniformLocation(shaderProgram, "uCombinedMatrix");
     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
 
     for (const auto& uniform : obj->getUniforms()) {
@@ -114,12 +190,13 @@ void Renderer::DrawObject(const std::unique_ptr<Object>& obj, GLuint shaderProgr
         glDrawArrays(obj->drawMode, 0, obj->vertexCount);
 
     if(wireframe && obj->drawMode == GL_TRIANGLES) {
+        glUseProgram(ShaderFactory::GetProgram("default"));
         glEnable(GL_POLYGON_OFFSET_LINE);
         glPolygonOffset(-1.0f, -1.0f); // Pull wireframe closer to camera
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        GLint colorLoc = glGetUniformLocation(shaderProgram, "Color");
+        GLint colorLoc = glGetUniformLocation(shaderProgram, "uColor");
         glm::vec4 wireColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); 
         glUniform4fv(colorLoc, 1, glm::value_ptr(wireColor));
 
