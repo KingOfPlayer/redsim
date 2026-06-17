@@ -90,7 +90,7 @@ void LabelUI::render() {
             if (groups.empty()) {
                 ImGui::OpenPopup("NoGroupsPopup");
             } else {
-                project->ApplyLabel(std::move(groups));
+                project->ApplyLabel(groups);
             }
         }
         ImGui::EndDisabled();

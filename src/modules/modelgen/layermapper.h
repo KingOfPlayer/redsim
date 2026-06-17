@@ -2,16 +2,16 @@
 
 #define LAYER_OVERLAP 0.01f
 
+#include <vector>
 #include <deque>
 #include <future>
-
 #include <execution>
 #include <algorithm>
 #include <numeric>
-#include <vector>
 #include <mutex>
-
 #include <unordered_set>
+#include <chrono>
+#include <omp.h>
 
 #include "layermappertypes.h"
 
@@ -58,7 +58,8 @@ public:
     std::vector<Polygon_with_holes_2> GCodePathsToPolygons(std::vector<GCodePoint> points, std::vector<GCodePath> paths);
     Mesh PolygonsLayerToMesh(std::vector<Polygon_with_holes_2>& layer, float layer_height);
 
+    std::vector<Mesh> GCodeToMeshLayers(std::vector<GCodeLayer> layers);
     Mesh RemeshModel(Mesh model);
 
-    Mesh GenerateMesh(std::vector<GCodeLayer> layers);
+    Mesh GenerateSurfaceMesh(std::vector<GCodeLayer> layers);
 };

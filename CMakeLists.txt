@@ -31,6 +31,8 @@ find_package(CGAL REQUIRED)
 
 find_package(TBB REQUIRED)
 
+find_package(OpenMP REQUIRED)
+
 #configure_file(${CMAKE_SOURCE_DIR}/include/constants.h.in ${CMAKE_CURRENT_BINARY_DIR}/generated/constants.h)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
@@ -94,4 +96,4 @@ target_include_directories(redsim PRIVATE
     #${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
-target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui ImViewGuizmo glm::glm X11 CGAL::CGAL TBB::tbb)
+target_link_libraries(redsim PRIVATE OpenGL::GL glfw glad imgui ImViewGuizmo glm::glm X11 CGAL::CGAL TBB::tbb OpenMP::OpenMP_CXX)

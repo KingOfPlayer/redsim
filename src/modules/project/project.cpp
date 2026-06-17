@@ -104,9 +104,9 @@ bool Project::isProjectLoaded(){
     return isGCodeFileLoaded;
 }
 
-void Project::GenerateShellMesh(){
+void Project::GenerateSurfaceMesh(){
     shellMesh = std::make_unique<Mesh>(
-        layerMapper->GenerateMesh(gcodeModule->layers)
+        layerMapper->GenerateSurfaceMesh(gcodeModule->layers)
     );
 
     MeshRenderObject = std::make_unique<Object>(

@@ -65,7 +65,7 @@ public:
     bool HasGCodeRenderObject();
     std::unique_ptr<Object>& GetGCodeRenderObject();
 
-    void GenerateShellMesh();
+    void GenerateSurfaceMesh();
     bool HasShellMeshGenerated();
     std::unique_ptr<Object>& GetMeshRenderObject();
 

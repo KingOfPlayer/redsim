@@ -183,6 +183,7 @@ Mesh LayerMapper::MergeTwoMesh(Mesh m1, Mesh m2) {
 
 Mesh LayerMapper::MergeLayersToModel(std::vector<Mesh> layers)
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
     if (layers.empty()) return Mesh();
 
     std::deque<Mesh> meshes;
@@ -204,11 +205,16 @@ Mesh LayerMapper::MergeLayersToModel(std::vector<Mesh> layers)
         }
     }
 
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Layer merging completed in %lld  millisecond.\nLayer speed: %.2f layers/millisecond.\n", elapsed, layers.size() / (elapsed / 1000.0));
+
     return std::move(meshes.front());
 }
 
 Mesh LayerMapper::RemeshModel(Mesh model)
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
     if(!CGAL::is_triangle_mesh(model)) {
         CGAL::Polygon_mesh_processing::triangulate_faces(model);
     }
@@ -224,7 +230,9 @@ Mesh LayerMapper::RemeshModel(Mesh model)
         .number_of_iterations(remesh_iterations)
     );
 
-    printf("Remeshed model to target edge length %.4f, angle %.4f\n", remesh_target_length, remesh_edge_angle);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Remeshing completed in %lld  millisecond.\n", elapsed);
 
     return model;
 }
@@ -251,65 +259,85 @@ Mesh LayerMapper::NefToMesh(const Nef_polyhedron& nef) {
 
 Mesh LayerMapper::MergeLayersToModelWithNef(std::vector<Mesh> layers)
 {
-    Nef_polyhedron merge_nef;
-    int completed = 0;
     int total = layers.size();
-    for (const auto& m : layers) {
-        printf("Merging layer %d/%d into Nef model...\n", ++completed, total);
-        Nef_polyhedron layer_nef = MeshToNef(m);
+    Nef_polyhedron final_merge_nef;
+    
+    int total_cores = std::thread::hardware_concurrency();
+    omp_set_num_threads(total_cores);
+    auto start_time = std::chrono::high_resolution_clock::now();
+    #pragma omp parallel
+    {
+        Nef_polyhedron local_nef;
 
-        if (merge_nef.is_empty()) {
-            merge_nef = layer_nef;
-        } else {
-            merge_nef += layer_nef;
+        #pragma omp for schedule(dynamic)
+        for (int i = 0; i < total; ++i) {
+            Nef_polyhedron local_layer = MeshToNef(layers[i]);
+
+            if (local_nef.is_empty()) {
+                local_nef = local_layer;
+            } else {
+                local_nef += local_layer;
+            }
+        }
+
+        #pragma omp critical
+        {
+            if (final_merge_nef.is_empty()) {
+                final_merge_nef = local_nef;
+            } else if (!local_nef.is_empty()) {
+                final_merge_nef += local_nef;
+            }
         }
     }
-    merge_nef.regularization(); 
-    Mesh final_result = NefToMesh(merge_nef);
+    final_merge_nef.regularization(); 
+    Mesh final_result = NefToMesh(final_merge_nef);
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Nef merging completed in %lld  millisecond.\n", elapsed);
+
     return final_result;
 }
 
-Mesh LayerMapper::GenerateMesh(std::vector<GCodeLayer> layers)
+std::vector<Mesh> LayerMapper::GCodeToMeshLayers(std::vector<GCodeLayer> layers)
 {
 
-    time_t start_time = time(nullptr);
+    auto start_time = std::chrono::high_resolution_clock::now();
     std::vector<Mesh> layer_meshes(layers.size());
 
-    std::for_each(std::execution::par, layers.begin(), layers.end(),
-        [&](const GCodeLayer& layer) {
-            std::vector<Polygon_with_holes_2> layer_polygons =
-                GCodePathsToPolygons(layer.points, layer.paths);
+    int total_cores = std::thread::hardware_concurrency();
+    omp_set_num_threads(total_cores);
+    #pragma omp parallel for schedule(dynamic)
+    for (size_t i = 0; i < layers.size(); ++i) {
+        const auto& layer = layers[i];
+        std::vector<Polygon_with_holes_2> layer_polygons =
+            GCodePathsToPolygons(layer.points, layer.paths);
 
-            Mesh layer_mesh = PolygonsLayerToMesh(layer_polygons, layer.layerHeight);
-            LayerMapper::ShiftLayerMesh(layer_mesh, layer.layer, layer.layerHeight);
+        Mesh layer_mesh = PolygonsLayerToMesh(layer_polygons, layer.layerHeight);
+        LayerMapper::ShiftLayerMesh(layer_mesh, layer.layer, layer.layerHeight);
 
-            size_t index = &layer - &layers[0];
-            layer_meshes[index] = std::move(layer_mesh);
-        }
-    );
+        layer_meshes[i] = std::move(layer_mesh);
+    }
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Layer mesh generation and extrusion completed in %lld  millisecond.\nLayer speed: %.2f layers/millisecond.\n", elapsed, layers.size() / (elapsed / 1000.0));
 
-    time_t end_time = time(nullptr);
-    double elapsed = difftime(end_time, start_time);
-    printf("Layer generation and extrusion completed in %.2f seconds.\n", elapsed);
+    return layer_meshes;
+}
 
+Mesh LayerMapper::GenerateSurfaceMesh(std::vector<GCodeLayer> layers)
+{
+    std:: vector<Mesh> layer_meshes = GCodeToMeshLayers(layers);
 
-    start_time = time(nullptr);
     Mesh final_model;
     if(Nef_based) {
         final_model = MergeLayersToModelWithNef(layer_meshes);
     }else{
         final_model = MergeLayersToModel(layer_meshes);
     }
-    end_time = time(nullptr);
-    elapsed = difftime(end_time, start_time);
-    printf("Model merging completed in %.2f seconds.\n", elapsed);
-
+    
     if(remesh_after_layers){
-        start_time = time(nullptr);
         final_model = RemeshModel(final_model);
-        end_time = time(nullptr);
-        elapsed = difftime(end_time, start_time);
-        printf("Remeshing final model completed in %.2f seconds.\n", elapsed);
     }
 
     return final_model;
@@ -317,7 +345,6 @@ Mesh LayerMapper::GenerateMesh(std::vector<GCodeLayer> layers)
 
 void LayerMapper::ShiftLayerMesh(Mesh& extruded_layer, float layer_offset, float layer_height) {
     double z_offset = layer_offset - layer_height + LAYER_OVERLAP;
-    //printf("layer offset: %.4f, layer height: %.4f, total z offset: %.4f\n", layer_offset, layer_height, z_offset);
     
     CGAL::Aff_transformation_3<K> translation(CGAL::TRANSLATION, K::Vector_3(0, z_offset, 0));
 

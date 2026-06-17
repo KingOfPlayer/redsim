@@ -58,7 +58,7 @@ void ModelGenUI::render() {
                 layerMapper.remesh_edge_angle = remesh_edge_angle;
                 layerMapper.remesh_iterations = remesh_iterations;
             }
-            project->GenerateShellMesh(); 
+            project->GenerateSurfaceMesh(); 
         }
     }
 

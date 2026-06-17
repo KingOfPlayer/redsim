@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <chrono>
 #include <glm/glm.hpp>
 
 #include "modelgenhelper.h"

@@ -1,5 +1,6 @@
 #include "tetrahedralmesher.h"
 
+
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/tetrahedral_remeshing.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
@@ -12,22 +13,24 @@ C3t3 TetrahedralMesher::MeshToC3t3(
     const Mesh& input_mesh
 )
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
     Mesh_fast input_mesh_fast = ModelgenHelper::MeshToMeshFast(input_mesh);
-    
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Mesh to Fast Mesh conversion completed in %lld  millisecond.\n", elapsed);
+
     if (CGAL::is_empty(input_mesh_fast))
         throw std::runtime_error("Input mesh is empty.");
 
     if (!CGAL::is_triangle_mesh(input_mesh_fast))
         throw std::runtime_error("Input mesh is not triangulated. Run your remesh step first.");
-    
-    Mesh_fast mesh_fast_copy = input_mesh_fast;
 
     double vol = CGAL::to_double(
-        CGAL::Polygon_mesh_processing::volume(mesh_fast_copy)
+        CGAL::Polygon_mesh_processing::volume(input_mesh_fast)
     );
     std::cerr << "volume: " << vol << "\n";
 
-    Mesh_domain_fast domain(mesh_fast_copy);
+    Mesh_domain_fast domain(input_mesh_fast);
 
     domain.detect_features();
 
@@ -40,12 +43,17 @@ C3t3 TetrahedralMesher::MeshToC3t3(
         CGAL::parameters::cell_size              = cell_size
     );
 
-	// Prepare tetrahedral object
+
+    start_time = std::chrono::high_resolution_clock::now();
+	// Tetrahedral Object
     C3t3 c3t3 = CGAL::make_mesh_3<C3t3>(
         domain, criteria,
         CGAL::parameters::no_perturb(),
         CGAL::parameters::no_exude()
     );
+    end_time = std::chrono::high_resolution_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Tetrahedral mesh generation completed in %lld  millisecond.\n", elapsed);
 
     if (c3t3.number_of_cells_in_complex() == 0)
         throw std::runtime_error("make_mesh_3 produced no tetrahedra. Check mesh is closed/manifold.");
@@ -72,7 +80,7 @@ C3t3 TetrahedralMesher::MeshToC3t3(
 
 C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<std::unique_ptr<VertexGroupBaseType>>& groups) 
 {
-
+    auto start_time = std::chrono::high_resolution_clock::now();
     for (auto fit = c3t3.facets_in_complex_begin(); fit != c3t3.facets_in_complex_end(); ++fit) 
     {
         C3t3::Facet current_facet = *fit;
@@ -122,6 +130,9 @@ C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<std::unique_ptr<
             }
         }
     }
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("C3t3 labeling completed in %lld  millisecond.\n", elapsed);
     return c3t3;
 }
 
@@ -131,17 +142,23 @@ Triangulation_3 TetrahedralMesher::C3t3ToMesh(C3t3 c3t3)
         std::move(c3t3)
     );
 
+    auto start_time = std::chrono::high_resolution_clock::now();
     CGAL::tetrahedral_isotropic_remeshing(
         tr,
         cell_size,
         CGAL::parameters::number_of_iterations(remesh_iterations)
     );
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Tetrahedral remeshing completed in %lld  millisecond.\n", elapsed);
 
     return tr;
 }
 
 // For future use
 Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     Mesh output_mesh;
     std::map<C3t3::Triangulation::Vertex_handle, Mesh::Vertex_index> vertex_map;
 
@@ -198,6 +215,9 @@ Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
             output_mesh.add_face(face_vertices[0], face_vertices[2], face_vertices[1]);
         }
     }
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("C3t3 to Mesh conversion completed in %lld  millisecond.\n", elapsed);
 
     return output_mesh;
 }
@@ -228,8 +248,12 @@ void TetrahedralMesher::SaveTetrahedralMesherResultToFile(const TetrahedralMeshe
 }
 
 TetrahedralMesherResult TetrahedralMesher::ProcessMeshForTetrahedral(const Mesh& input_mesh) {
+    auto start_time = std::chrono::high_resolution_clock::now();
 	TetrahedralMesherResult result;
 	result.c3t3 = MeshToC3t3(input_mesh);
 	result.mesh = TetrahedralToMesh(result.c3t3);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    printf("Total tetrahedral meshing process completed in %lld  millisecond.\n", elapsed);
 	return result;
 }

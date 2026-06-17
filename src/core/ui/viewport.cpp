@@ -202,14 +202,14 @@ void Viewport::render() {
     }
 
     // Debug camera info
-    if (cameraUpdated) {
+    /*if (cameraUpdated) {
         glm::vec3 cameraPos = camera->GetPosition();
         glm::vec3 cameraTarget = camera->GetTarget();
         
         printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
         printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
         // print view matrix
-        /*glm::mat4 view = camera->GetViewMatrix();
+        glm::mat4 view = camera->GetViewMatrix();
         printf("View Matrix:\n");
         for (int i = 0; i < 4; i++) {
             printf("%.2f %.2f %.2f %.2f\n", view[i][0], view[i][1], view[i][2], view[i][3]);
@@ -223,8 +223,8 @@ void Viewport::render() {
         printf("ViewProjection Matrix:\n");
         for (int i = 0; i < 4; i++) {
             printf("%.2f %.2f %.2f %.2f\n", viewProj[i][0], viewProj[i][1], viewProj[i][2], viewProj[i][3]);
-        }*/
-    }
+        }
+    }*/
 
     // ImViewGuizmo
     float padding   = 30.f;
