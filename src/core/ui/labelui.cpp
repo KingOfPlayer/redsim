@@ -39,7 +39,7 @@ void LabelUI::render() {
                 bool labelExists = false;
                 for (const auto& group : groups) {
                     if (group->getLabelID() == new_vertex_label) {
-                        ImGui::OpenPopup("SameLabelPopup");
+                        ImGui::OpenPopup("Used Label Index");
                         labelExists = true;
                         break;
                     }
@@ -88,9 +88,11 @@ void LabelUI::render() {
         ImGui::BeginDisabled(groups.empty());
         if (ImGui::Button("Label Apply to Mesh", ImVec2(-1, 0))) {
             if (groups.empty()) {
-                ImGui::OpenPopup("NoGroupsPopup");
+                ImGui::OpenPopup("Insufficient Vertex Groups");
             } else {
-                project->ApplyLabel(groups);
+                // Fix: Move the groups to the project and clear the local vector
+                project->ApplyLabel(std::move(groups));
+                ImGui::OpenPopup("Labels Applied");
             }
         }
         ImGui::EndDisabled();
@@ -104,15 +106,22 @@ void LabelUI::render() {
     ImGui::EndDisabled();
 
     // Popups
-    if (ImGui::BeginPopupModal("SameLabelPopup", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Same label index already exists.\nPlease choose a different index.");
+    if (ImGui::BeginPopupModal("Used Label Index", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Given label index already exists.\nPlease choose a different index.");
         ImGui::Spacing();
         if (ImGui::Button("Close", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
     }
 
-    if (ImGui::BeginPopupModal("NoGroupsPopup", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("No vertex groups to label.\nPlease add at least one vertex group.");
+    if (ImGui::BeginPopupModal("Insufficient Vertex Groups", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Insufficient Vertex Groups.\nPlease add at least one vertex group.");
+        ImGui::Spacing();
+        if (ImGui::Button("Close", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal("Labels Applied", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("Labels have been successfully applied to the mesh.");
         ImGui::Spacing();
         if (ImGui::Button("Close", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();
