@@ -66,7 +66,7 @@ glm::mat4 Camera::GetViewMatrix()
 
 glm::mat4 Camera::GetProjectionMatrix(float aspectRatio)
 {
-    return glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+    return glm::perspective(glm::radians(fov), aspectRatio, nearPlane, farPlane);
 }
 
 glm::mat4 Camera::GetViewProjectMatrix(float aspectRatio)

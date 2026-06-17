@@ -52,30 +52,30 @@ public:
     std::string GetFileDirectory();
     std::string GetFilenameWithoutExtension();
 
+    GCodeModule& GetGCodeModuleInstance();
+    LayerMapper& GetLayerMapperInstance();
+    TetrahedralMesher& GetTetrahedralMesherInstance();
+    FreeFemScript& GetFreeFemScriptInstance();
+    FreeFemModule& GetFreeFemModuleInstance();
+    FreeFemView& GetFreeFemViewInstance();
+
     void LoadGCode(FilePath* filepath);
     FilePath* GetCurrentGCodeFilePath();
     void GenerateRenderObjectFromGCode();
     bool HasGCodeRenderObject();
     std::unique_ptr<Object>& GetGCodeRenderObject();
 
-    void ExtractLayers();
     void GenerateShellMesh();
     bool HasShellMeshGenerated();
     std::unique_ptr<Object>& GetMeshRenderObject();
-    LayerMapper& GetLayerMapper();
 
     void GenerateTetrahedralMesh();
     bool HasTetrahedralMeshGenerated();
     std::unique_ptr<Object>& GetTetrahedralMeshMeshRenderObject();
     void ApplyLabel(std::vector<std::unique_ptr<VertexGroupBaseType>> groups);
     void SaveTetrahedralMeshToFile();
-    TetrahedralMesher& GetTetrahedralMesher();
 
-    FreeFemScript& GetFreeFemScriptInstance();
-    FreeFemModule& GetFreeFemModuleInstance();
-    FreeFemView& GetFreeFemViewInstance();
-
-    void LoadSimulationData();
+    bool LoadSimulationData();
     std::unique_ptr<Object>& GetSimulationRenderObject();
 
     void ToggleViewResultMode();

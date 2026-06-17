@@ -53,6 +53,30 @@ std::string Project::GetFilenameWithoutExtension(){
     return filenameWithoutExt;
 }
 
+GCodeModule& Project::GetGCodeModuleInstance(){
+    return *gcodeModule;
+}
+
+LayerMapper& Project::GetLayerMapperInstance(){
+    return *layerMapper;
+}
+
+TetrahedralMesher& Project::GetTetrahedralMesherInstance(){
+    return *tetrahedralMesher;
+}
+
+FreeFemScript& Project::GetFreeFemScriptInstance(){
+    return *freefemScript;
+}
+
+FreeFemModule& Project::GetFreeFemModuleInstance(){
+    return *freefemModule;
+}
+
+FreeFemView& Project::GetFreeFemViewInstance(){
+    return *freefemView;
+}
+
 void Project::LoadGCode(FilePath* filepath){
     gcodeModule->OpenFile(filepath);
     gcodeModule->ExtractPointsAndPaths();
@@ -80,19 +104,9 @@ bool Project::isProjectLoaded(){
     return isGCodeFileLoaded;
 }
 
-void Project::ExtractLayers(){
-    std::vector<GCodeLayer> layers = gcodeModule->ExtractLayers();
-
-    printf("Extracted %zu layers from GCode.\n", layers.size());
-}
-
 void Project::GenerateShellMesh(){
-    std::vector<GCodeLayer> layers = gcodeModule->ExtractLayers();
-    
-    //layerMapper.CreateRenderObjectFromMesh(layers);
-
     shellMesh = std::make_unique<Mesh>(
-        layerMapper->GenerateMesh(layers)
+        layerMapper->GenerateMesh(gcodeModule->layers)
     );
 
     MeshRenderObject = std::make_unique<Object>(
@@ -109,10 +123,6 @@ bool Project::HasShellMeshGenerated(){
 
 std::unique_ptr<Object>& Project::GetMeshRenderObject(){
     return MeshRenderObject;
-}
-
-LayerMapper& Project::GetLayerMapper(){
-    return *layerMapper;
 }
 
 void Project::GenerateTetrahedralMesh(){
@@ -165,17 +175,6 @@ void Project::SaveTetrahedralMeshToFile(){
     printf("Tetrahedral mesh saved to: %s\n", outputFilePath.c_str());
 }
 
-TetrahedralMesher& Project::GetTetrahedralMesher(){
-    return *tetrahedralMesher;
-}
-
-FreeFemScript& Project::GetFreeFemScriptInstance(){
-    return *freefemScript;
-}
-
-FreeFemModule& Project::GetFreeFemModuleInstance(){
-    return *freefemModule;
-}
 
 void Project::ApplyLabel(std::vector<std::unique_ptr<VertexGroupBaseType>> groups){
     if(!HasTetrahedralMeshGenerated()) {
@@ -189,16 +188,15 @@ void Project::ApplyLabel(std::vector<std::unique_ptr<VertexGroupBaseType>> group
     
 }
 
-FreeFemView& Project::GetFreeFemViewInstance(){
-    return *freefemView;
-}
-
-void Project::LoadSimulationData() {
+bool Project::LoadSimulationData() {
     freefemView->loadSimulationData(GetFileDirectory() + "/" + GetFilenameWithoutExtension() + "_simulation_data.txt");
     freefemView->loadSimulationMesh(GetFileDirectory() + "/" + GetFilenameWithoutExtension() + "_tetrahedral.mesh");
-    if(freefemView->isSimaulationResultReady()){
+    bool isloaded = freefemView->loadSimulation();
+    if (!isloaded) {
         freefemView->generateRenderObject();
     }
+
+    return isloaded;
 }
 
 std::unique_ptr<Object>& Project::GetSimulationRenderObject() {

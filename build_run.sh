@@ -9,7 +9,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cmake --build . -- -j4
+cmake --build . -j 4
+
 
 if [ $? -ne 0 ]; then
     echo "Build failed!"

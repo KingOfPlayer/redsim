@@ -1,4 +1,5 @@
 #include "rootui.h"
+#include "embedded_font.h"
 
 #include "rootuictx.h"
 #include "ui.h"
@@ -20,6 +21,19 @@ RootUI::RootUI(GLFWwindow* window, RootUICtx* ctx) : rootUICtx(ctx) {
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     ImGui::StyleColorsDark();
+
+    // Load embedded font
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;    
+    ImFont* font = io->Fonts->AddFontFromMemoryCompressedTTF(
+        (void*)Roboto_Medium_compressed_data, 
+        Roboto_Medium_compressed_size, 
+        16.0f,
+        &config, 
+        io->Fonts->GetGlyphRangesDefault()
+    );
+    io->FontDefault = font; 
+
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 

@@ -6,7 +6,6 @@
 class Project;
 
 class GCodeTools : public UI {
-    static void LoadFileAndSaveExtractedPathAsObject();
     static void LoadFileIntoProject(Project* project);
 
     void render() override;

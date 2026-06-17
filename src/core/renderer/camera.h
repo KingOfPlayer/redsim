@@ -13,6 +13,11 @@ float yaw;
 float pitch;
 float distance;
 float sensitivity;
+
+float fov = 45.0f;
+float nearPlane = 0.1f;
+float farPlane = 100.0f;
+
 public:
 
     Camera(glm::vec3 position, glm::vec3 target, float yaw, float pitch, float distance, float sensitivity);

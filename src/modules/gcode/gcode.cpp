@@ -15,7 +15,11 @@ void GCodeModule::OpenFile(FilePath *filepath)
     currentFile = std::make_unique<FilePath>();
     *currentFile = *filepath;
 
+    // Reset previous data
     programCommands.clear();
+    points.clear();
+    paths.clear();
+    layers.clear();
     
     while (!feof(file))
     {
@@ -81,6 +85,8 @@ void GCodeModule::OpenFile(FilePath *filepath)
     }
 
     fclose(file);
+    ExtractPointsAndPaths();
+    ExtractLayers();
 }
 
 GCodeProgramCommand GCodeModule::ParseGCodeLine(char *line)
@@ -345,14 +351,14 @@ Object GCodeModule::ConvertPathToRenderObject() {
     return obj;
 }
 
-std::vector<GCodeLayer> GCodeModule::ExtractLayers() {
-    std::vector<GCodeLayer> layers;
+void GCodeModule::ExtractLayers() {
+    layers.clear();
     float layer_height = 0.0f;
     float last_y = 0.0f;
     
     if (paths.empty()) {
         printf("No paths available to extract layers.\n");
-        return layers;
+        return;
     }
 
     auto getLayerWithY = [&](float y) -> GCodeLayer* {
@@ -389,7 +395,7 @@ std::vector<GCodeLayer> GCodeModule::ExtractLayers() {
             newLayer.layerHeight = layer_height;
             layers.push_back(newLayer);
             layer = &layers.back();
-            printf("Created new layer at Z=%.2f with height %.2f\n", newLayer.layer, newLayer.layerHeight);
+            //printf("Created new layer at Z=%.2f with height %.2f\n", newLayer.layer, newLayer.layerHeight);
         }
 
         GCodePath layerPath;
@@ -418,8 +424,13 @@ std::vector<GCodeLayer> GCodeModule::ExtractLayers() {
         layer->paths.push_back(layerPath);
     }
 
-
     printf("Extracted %zu layers from GCode.\n", layers.size());
+}
 
-    return layers;
+GCodeSummary GCodeModule::GetSummary() const {
+    GCodeSummary summary;
+    summary.totalPoints = points.size();
+    summary.totalPaths = paths.size();
+    summary.totalLayers = layers.size();
+    return summary;
 }

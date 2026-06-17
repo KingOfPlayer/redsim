@@ -63,10 +63,8 @@ Viewport::Viewport(RootUICtx* rootUICtx) : UI(rootUICtx) {
     // ImViewGuizmo style configuration
     auto& style = ImViewGuizmo::GetStyle();
     style.scale = 0.75f;
-    style.axisLabels[1] = "Z";
-    style.axisLabels[2] = "Y";
-    style.axisColors[1] = IM_COL32(51, 128, 255, 255);
-    style.axisColors[2] = IM_COL32(51, 230, 51, 255);
+    //style.axisColors[1] = IM_COL32(51, 128, 255, 255);
+    //style.axisColors[2] = IM_COL32(51, 230, 51, 255);
     style.animateSnap = false;
     style.snapAnimationDuration = 0.75f;
 }
@@ -203,15 +201,15 @@ void Viewport::render() {
         }
     }
 
-    // Debug
-    /*if (cameraUpdated) {
+    // Debug camera info
+    if (cameraUpdated) {
         glm::vec3 cameraPos = camera->GetPosition();
         glm::vec3 cameraTarget = camera->GetTarget();
         
         printf("Camara Position: (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
         printf("Camara Target Position: (%.2f, %.2f, %.2f)\n", cameraTarget.x, cameraTarget.y, cameraTarget.z);
         // print view matrix
-        glm::mat4 view = camera->GetViewMatrix();
+        /*glm::mat4 view = camera->GetViewMatrix();
         printf("View Matrix:\n");
         for (int i = 0; i < 4; i++) {
             printf("%.2f %.2f %.2f %.2f\n", view[i][0], view[i][1], view[i][2], view[i][3]);
@@ -225,8 +223,8 @@ void Viewport::render() {
         printf("ViewProjection Matrix:\n");
         for (int i = 0; i < 4; i++) {
             printf("%.2f %.2f %.2f %.2f\n", viewProj[i][0], viewProj[i][1], viewProj[i][2], viewProj[i][3]);
-        }
-    }*/
+        }*/
+    }
 
     // ImViewGuizmo
     float padding   = 30.f;
@@ -238,11 +236,18 @@ void Viewport::render() {
     );
 
     glm::vec3 cameraPos = camera->GetPosition();
-    glm::quat cameraRot = camera->GetRotation();
     glm::vec3 cameraTarget = camera->GetTarget();
+
+    glm::quat camRot = camera->GetRotation();
+
+    camRot.y = -camRot.y;
+    camRot.w = -camRot.w; 
+
+    glm::quat gizmoRot = glm::conjugate(camRot);
+
     ImViewGuizmo::BeginFrame();
 
-    ImViewGuizmo::Rotate(cameraPos, cameraRot,cameraTarget, gizmoPos);
+    ImViewGuizmo::Rotate(cameraPos, gizmoRot, cameraTarget, gizmoPos);
 
     ImGui::End();
 

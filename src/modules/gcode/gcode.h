@@ -108,6 +108,13 @@ struct GCodeLayer{
     std::vector<GCodePath> paths;
 };
 
+struct GCodeSummary{
+    int totalLines;
+    int totalPoints;
+    int totalPaths;
+    int totalLayers;
+};
+
 class Object;
 struct FilePath;
 
@@ -115,6 +122,7 @@ class GCodeModule{
 public:
     std::vector<GCodePoint> points;
     std::vector<GCodePath> paths;
+    std::vector<GCodeLayer> layers;
     GCodeMachineState state;
     std::unique_ptr<FilePath> currentFile;
 
@@ -125,9 +133,11 @@ public:
     void ExtractPointsAndPaths();
     Object ConvertPathToRenderObject();
 
-    std::vector<GCodeLayer> ExtractLayers();
+    void ExtractLayers();
 
     void SavePointsAndPathsToObj(const char* outputPath);
+
+    GCodeSummary GetSummary() const;
 
 private:
     void ProcessGCommand(const GCodeProgramCommand& cmd);
