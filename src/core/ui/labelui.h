@@ -19,7 +19,7 @@ class LabelUI : public UI{
 
     // Force
     int new_froceDirection_index = 0;
-    int new_forceValue;
+    int new_forceValue = 50;
 
     void render() override;
 public:

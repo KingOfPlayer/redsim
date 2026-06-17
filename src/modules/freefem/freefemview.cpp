@@ -116,7 +116,6 @@ bool FreeFemView::generateRenderObject() {
     Object renderObj;
     renderObj.drawMode = GL_TRIANGLES;
     renderObj.useIndices = true;
-    renderObj.useCulling = false;
 
     auto& tr = simulationC3t3.triangulation();
     size_t totalVertices = tr.number_of_vertices();

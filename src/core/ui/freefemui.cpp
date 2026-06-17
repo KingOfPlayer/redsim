@@ -19,17 +19,19 @@ void FreeFemUI::render() {
         
         ImGui::Spacing();
         if (ImGui::Button("Generate FreeFEM Script", ImVec2(-1, 0))) {
-            if (EValue <= 0.0 || PoissonRatioValue < 0.0 || PoissonRatioValue >= 0.5) {
+
+            FreeFemScript& freefemScript = project->GetFreeFemScriptInstance();
+            std::string baseDir = project->GetFileDirectory() + "/" + project->GetFilenameWithoutExtension();
+            
+            freefemScript.setMaterialProperties(EValue, PoissonRatioValue);
+            freefemScript.setScriptPath(baseDir + "_simulation.edp");
+            freefemScript.setMeshFilePath(baseDir + "_tetrahedral.mesh");
+            freefemScript.setScriptOutputPath(baseDir + "_simulation_data.txt");
+            
+            if (EValue <= 0.0 || PoissonRatioValue < 0.0 || PoissonRatioValue >= 0.5 || freefemScript.GenerateScript()) {
                 ImGui::OpenPopup("Failed Generate Script");
-            }else {
-                FreeFemScript& freefemScript = project->GetFreeFemScriptInstance();
-                std::string baseDir = project->GetFileDirectory() + "/" + project->GetFilenameWithoutExtension();
-                
-                freefemScript.setMaterialProperties(EValue, PoissonRatioValue);
-                freefemScript.setScriptPath(baseDir + "_simulation.edp");
-                freefemScript.setMeshFilePath(baseDir + "_tetrahedral.mesh");
-                freefemScript.setScriptOutputPath(baseDir + "_simulation_data.txt");
-                freefemScript.GenerateScript();
+            } else {
+                ImGui::OpenPopup("Generated Script");
             }
         }
     }
@@ -87,6 +89,13 @@ void FreeFemUI::render() {
     if (ImGui::BeginPopupModal("Failed Generate Script", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text(" Failed to generate FreeFEM script. Please check the input parameters and try again.");
         ImGui::TextWrapped(" Ensure;\n- E > 0\n- 0 <= Poisson < 0.5\n- Valid vertex groups are added");  
+        ImGui::Spacing();
+        if (ImGui::Button("Close", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal("Generated Script", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("FreeFEM script generated successfully.");  
         ImGui::Spacing();
         if (ImGui::Button("Close", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
         ImGui::EndPopup();

@@ -192,7 +192,7 @@ bool Project::LoadSimulationData() {
     freefemView->loadSimulationData(GetFileDirectory() + "/" + GetFilenameWithoutExtension() + "_simulation_data.txt");
     freefemView->loadSimulationMesh(GetFileDirectory() + "/" + GetFilenameWithoutExtension() + "_tetrahedral.mesh");
     bool isloaded = freefemView->loadSimulation();
-    if (!isloaded) {
+    if (isloaded) {
         freefemView->generateRenderObject();
     }
 

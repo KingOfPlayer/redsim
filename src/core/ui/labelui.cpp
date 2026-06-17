@@ -30,7 +30,7 @@ void LabelUI::render() {
         
         if (new_vertex_type_index == 1) {
             ImGui::Combo("Force Direction", &new_froceDirection_index, ForceDirectionStrings, IM_ARRAYSIZE(ForceDirectionStrings));
-            ImGui::InputInt("Force Value", &new_forceValue);
+            ImGui::InputInt("Force MPa", &new_forceValue);
         }
 
         ImGui::Spacing();
@@ -48,12 +48,11 @@ void LabelUI::render() {
                     std::vector<glm::vec3>& vertices = selectedVertices.value();
                     int id = new_vertex_label;
                     if (new_vertex_type_index == 0) {
-                        groups.push_back(std::make_unique<FixedVertexGroupType>(id, vertices, new_fixedValue));
+                        groups.push_back(std::make_unique<FixedVertexGroupType>(id, vertices));
                     } else if (new_vertex_type_index == 1) {
                         ForceDirection dir = static_cast<ForceDirection>(new_froceDirection_index);
                         groups.push_back(std::make_unique<ForceVertexGroupType>(id, vertices, new_forceValue, dir));
                     }
-                    ctx->ClearSelectedVertices();
                     new_vertex_label++;
                 }
             }

@@ -57,7 +57,7 @@ std::vector<glm::vec3> VertexTool::SelectVertices(const std::unique_ptr<Object>&
         
         if (isSelected) {
             selectedVertices.push_back(vertexPos);
-            printf("Selected vertex %zu at: (%.2f, %.2f, %.2f)\n", selectedVertices.size(), vertexPos.x, vertexPos.y, vertexPos.z);
+            //printf("Selected vertex %zu at: (%.2f, %.2f, %.2f)\n", selectedVertices.size(), vertexPos.x, vertexPos.y, vertexPos.z);
         }
     }
 

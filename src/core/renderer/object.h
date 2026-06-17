@@ -42,7 +42,7 @@ public:
     uint32_t vertexCount;
     GLenum drawMode;
     bool useIndices = true;
-    bool useCulling = true;
+    bool useCulling = false;
     std::vector<Uniform> uniforms;
 
     glm::vec3 position = {0.0f, 0.0f, 0.0f};

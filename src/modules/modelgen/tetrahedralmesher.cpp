@@ -119,8 +119,6 @@ C3t3 TetrahedralMesher::LabelC3t3(C3t3& c3t3, const std::vector<std::unique_ptr<
             double sq_dist = search.begin()->second;
             if (sq_dist < max_sq_distance) {
                 c3t3.set_surface_patch_index(current_facet, current_label + LABEL_ID_OFFSET);
-
-                printf("labeled from %d to %d\n", c3t3.surface_patch_index(current_facet), current_label + LABEL_ID_OFFSET);
             }
         }
     }
@@ -152,11 +150,17 @@ Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
         Cell_handle cell = fit->first;
         int index        = fit->second;
         
-        if (cell->subdomain_index() == 0) {
-            cell = cell->neighbor(index);
-            index = cell->index(fit->first);
+        Cell_handle neighbor_cell = cell->neighbor(index);
+        int neighbor_index        = neighbor_cell->index(cell);
+
+        int sub_cell     = cell->subdomain_index();
+        int sub_neighbor = neighbor_cell->subdomain_index();
+
+        if (sub_cell < sub_neighbor) {
+            cell = neighbor_cell;
+            index = neighbor_index;
         }
-        
+
         int i1 = (index + 1) % 4;
         int i2 = (index + 2) % 4;
         int i3 = (index + 3) % 4;
@@ -165,7 +169,7 @@ Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
             std::swap(i1, i2);
         }
 
-        std::array<Cell_handle::value_type::Vertex_handle, 3> v_handles = {
+        std::array<C3t3::Triangulation::Vertex_handle, 3> v_handles = {
             cell->vertex(i1),
             cell->vertex(i2),
             cell->vertex(i3)
@@ -188,7 +192,11 @@ Mesh TetrahedralMesher::TetrahedralToMesh(const C3t3& c3t3) {
             face_vertices[i] = vertex_map[v_handle];
         }
 
-        output_mesh.add_face(face_vertices[0], face_vertices[1], face_vertices[2]);
+        auto fe = output_mesh.add_face(face_vertices[0], face_vertices[1], face_vertices[2]);
+        
+        if (fe == Mesh::null_face()) {
+            output_mesh.add_face(face_vertices[0], face_vertices[2], face_vertices[1]);
+        }
     }
 
     return output_mesh;
